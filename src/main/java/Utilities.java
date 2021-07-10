@@ -8,7 +8,6 @@ import java.awt.Graphics;
 import java.util.stream.Collectors;
 
 
-
 public class Utilities {
 
     // Variables for method Calculate_metrics
@@ -70,7 +69,6 @@ public class Utilities {
         double f1_score = 2 * (precision * sensitivity) / (precision + sensitivity);
         System.out.print(" F1 score: " + f1_score);
         System.out.println();
-
     }*/
 
     /**
@@ -82,7 +80,7 @@ public class Utilities {
         int[] ans = new int[m];
         for (int k = 0; k < m; ++k)
             ans[k] = k;
-        for (int k = m; k < Max; ++k) {
+        for (int k = m; k <= Max; ++k) {
             int v = rand.nextInt(k + 1);
             if (v < m) {
                 ans[v] = k;
@@ -93,5 +91,9 @@ public class Utilities {
     }
 
 
-
+    public static int[] SendAllPossibleCombinations(int htid) {
+        int arr[][] = {{0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {1, 2, 0}, {2, 0, 1}, {2, 1, 0}};
+        System.out.println(htid + " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! " + Arrays.toString(arr[htid-1]));
+        return arr[htid - 1];
+    }
 }

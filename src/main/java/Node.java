@@ -293,6 +293,7 @@ public class Node implements Serializable {
     public void UpdateHT(Node node, String[] sample) {
 
         Node updatedNode = TraverseTree(node, sample);
+
         if (NeedForSplit(updatedNode)) {
             AttemptSplit(updatedNode);
             updatedNode = TraverseTree(node, sample);
@@ -313,9 +314,6 @@ public class Node implements Serializable {
     public void InsertNewSample(Node node, String[] sample) {
         for (int i = 0; i < sample.length - 1; i++) {
             LinkedList<Double> list = getAttributeList(node, i);
-            if(sample[i].valueOf(0)== "\uFEFF") {
-                System.out.println("hey");
-            }
             list.add(Double.parseDouble(sample[i]));
         }
 
@@ -360,10 +358,13 @@ public class Node implements Serializable {
      * with a given probability 1-delta
      */
     public double CalculateHoeffdingBound(Node node) {
-        double R = Math.log(2);
+        double R = 1;
         double n = node.getNmin();
-        double ln = Math.log(1.0 / node.delta) / Math.log(2.71828);
-        return Math.sqrt((R * R * ln) / 2 * n);
+        double ln = Math.log(1.0 / node.delta);
+        double numerator = Math.pow(R, 2) * ln;
+        double denominator = 2 * n;
+        double fraction = numerator /denominator;
+        return Math.sqrt(fraction);
     }
 
     /**

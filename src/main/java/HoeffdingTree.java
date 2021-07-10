@@ -9,12 +9,11 @@ public class HoeffdingTree implements Serializable {
     public double correctly_classified;
     public double weight;
     public int combination_function;
+    public int hoeffding_tree_id;
     public int[] m_features; // list of labels corresponding to samples of node
     public Node root = new Node();
 
-    public HoeffdingTree() {
-        this.CreateHoeffdingTree(5, 8, 5, 0.9, 0.15, 1);
-    }
+    public HoeffdingTree() {}
 
     /**
      * @param m_features              random subset of features
@@ -26,13 +25,14 @@ public class HoeffdingTree implements Serializable {
      *                                <p> Create the Hoeffding tree for given parameters </p>
      */
 
-    public void CreateHoeffdingTree(int m_features, int Max, int max_examples_seen, double delta, double tie_threshold, int combination_function_id) {
+    public void CreateHoeffdingTree(int m_features, int Max, int max_examples_seen, double delta, double tie_threshold, int combination_function_id, int hoeffding_tree_id) {
         root.CreateHT(m_features, max_examples_seen, delta, tie_threshold);
         instances_seen = 0.0;
         correctly_classified = 0.0;
-        weight = 1.0;
+        weight = 0.0;
+        this.hoeffding_tree_id = hoeffding_tree_id;
         combination_function = combination_function_id;
-        initialize_m_features(m_features, Max);
+        initialize_m_features(m_features, Max -1, hoeffding_tree_id);
     }
 
     /**
@@ -66,13 +66,11 @@ public class HoeffdingTree implements Serializable {
         }
         if (combination_function == 1) {
             // Majority voting
+            System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!hi");
             /* In this case the weight does not change during the stream. Therefore, it is enough just to set it 1.*/
             if (keyTuple == -5 || keyTuple == -10) {
                 // Testing || Prediction instance
                 predicted_value = node.TestHT(node, selectedInput);
-            }
-            if (predicted_value == -1) {
-                System.out.println("sheeesh");
             }
             this.setMajority_Voting_Weight(1, 1);
         } else if (combination_function == 2) {
@@ -153,7 +151,7 @@ public class HoeffdingTree implements Serializable {
     }
 
     public void setWeight() {
-        this.weight = 1;
+        this.weight = 0;
     }
 
     public void setMajority_Voting_Weight(double correctly_classified, double instances_seen) {
@@ -180,8 +178,9 @@ public class HoeffdingTree implements Serializable {
      * @param m   how many features I want the Hoeffding Tree to have
      * @param Max What is the range aka how many features I have to select from input's feature
      */
-    public void initialize_m_features(int m, int Max) {
+    public void initialize_m_features(int m, int Max, int htid) {
         this.m_features = Utilities.ReservoirSampling(m, Max);
+//        this.m_features = Utilities.SendAllPossibleCombinations(htid);
     }
 
     /**
@@ -203,7 +202,7 @@ public class HoeffdingTree implements Serializable {
      * <p> Print the selected features of tree </p>
      */
     public void print_m_features() {
-        System.out.print("Selected Features: ");
+        System.out.print("HT "+hoeffding_tree_id+" Selected Features: ");
         for (int m_feature : this.m_features) {
             System.out.print(m_feature + " ");
         }
