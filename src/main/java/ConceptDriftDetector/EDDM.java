@@ -8,7 +8,7 @@ public class EDDM implements ConceptDriftDetector{
     }
     @Override
     public void FindConceptDrift(double error_rate) {
-        System.out.println("Hi inside FindConceptDrift EDDM");
+        System.out.println("Hi inside FindConceptDrift EDDM!");
 
     }
 
