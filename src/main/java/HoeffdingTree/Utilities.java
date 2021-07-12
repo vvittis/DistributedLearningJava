@@ -1,11 +1,7 @@
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+package HoeffdingTree;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.util.stream.Collectors;
+import java.util.Arrays;
+import java.util.Random;
 
 
 public class Utilities {
@@ -90,10 +86,4 @@ public class Utilities {
         return ans;
     }
 
-
-    public static int[] SendAllPossibleCombinations(int htid) {
-        int arr[][] = {{0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {1, 2, 0}, {2, 0, 1}, {2, 1, 0}};
-        System.out.println(htid + " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! " + Arrays.toString(arr[htid-1]));
-        return arr[htid - 1];
-    }
 }

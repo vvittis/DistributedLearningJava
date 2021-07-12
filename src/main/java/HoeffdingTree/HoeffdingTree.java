@@ -1,3 +1,5 @@
+package HoeffdingTree;
+
 import java.io.Serializable;
 
 public class HoeffdingTree implements Serializable {
@@ -13,7 +15,8 @@ public class HoeffdingTree implements Serializable {
     public int[] m_features; // list of labels corresponding to samples of node
     public Node root = new Node();
 
-    public HoeffdingTree() {}
+    public HoeffdingTree() {
+    }
 
     /**
      * @param m_features              random subset of features
@@ -32,7 +35,7 @@ public class HoeffdingTree implements Serializable {
         weight = 0.0;
         this.hoeffding_tree_id = hoeffding_tree_id;
         combination_function = combination_function_id;
-        initialize_m_features(m_features, Max -1, hoeffding_tree_id);
+        initialize_m_features(m_features, Max - 1, hoeffding_tree_id);
     }
 
     /**
@@ -64,68 +67,18 @@ public class HoeffdingTree implements Serializable {
             // Only for the first training instance
             setWeight();
         }
-        if (combination_function == 1) {
-            // Majority voting
-            System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!hi");
-            /* In this case the weight does not change during the stream. Therefore, it is enough just to set it 1.*/
-            if (keyTuple == -5 || keyTuple == -10) {
-                // Testing || Prediction instance
-                predicted_value = node.TestHT(node, selectedInput);
-            }
-            this.setMajority_Voting_Weight(1, 1);
-        } else if (combination_function == 2) {
-            // Weighted Voting
-            this.instances_seen++;
-            // Training instance
-            predicted_value = node.TestHT(node, selectedInput);
-            if (predicted_value == Integer.parseInt(selectedInput[selectedInput.length - 1])) { // predicted value equal to the true label
-                this.correctly_classified++;
-            } else if (predicted_value == -1) {
-                // that means that at some point there was a split which had created two new children nodes
-                // and at some other point a new instance traversed to that empty node.
-                this.instances_seen--;
-            }
-            this.setWeighted_Voting_Weight(this.correctly_classified, this.instances_seen);
-
-
-        } else if (combination_function == 3) {
-            //DES-P
-            if (keyTuple == -5 || keyTuple == -10) {
-                // Testing || Prediction instance
-                predicted_value = node.TestHT(node, selectedInput);
-            } else {
-                this.instances_seen++;
-                // Training instance
-                predicted_value = node.TestHT(node, selectedInput);
-                if (predicted_value == Integer.parseInt(selectedInput[selectedInput.length - 1])) { // predicted value equal to the true label
-                    this.correctly_classified++;
-                } else if (predicted_value == -1) {
-                    // that means that at some point there was a split which had created two new children nodes
-                    // and at some other point a new instance traversed to that empty node.
-                    this.instances_seen--;
-                }
-                this.setDES_P_Weight(this.correctly_classified, this.instances_seen);
-            }
-        } else if (combination_function == 4) {
-            //KNORA-U
-            if (keyTuple == -5 || keyTuple == -10) {
-                // Testing || Prediction instance
-                predicted_value = node.TestHT(node, selectedInput);
-            } else {
-                this.instances_seen++;
-                // Training instance
-                predicted_value = node.TestHT(node, selectedInput);
-
-                if (predicted_value == Integer.parseInt(selectedInput[selectedInput.length - 1])) { // predicted value equal to the true label
-                    this.correctly_classified++;
-                } else if (predicted_value == -1) {
-                    // that means that at some point there was a split which had created two new children nodes
-                    // and at some other point a new instance traversed to that empty node.
-                    this.instances_seen--;
-                }
-                this.setKNORA_U_Weight(this.correctly_classified);
-            }
+        // Weighted Voting
+        this.instances_seen++;
+        // Training instance
+        predicted_value = node.TestHT(node, selectedInput);
+        if (predicted_value == Integer.parseInt(selectedInput[selectedInput.length - 1])) { // predicted value equal to the true label
+            this.correctly_classified++;
+        } else if (predicted_value == -1) {
+            // that means that at some point there was a split which had created two new children nodes
+            // and at some other point a new instance traversed to that empty node.
+            this.instances_seen--;
         }
+        this.setWeight(this.correctly_classified, this.instances_seen);
 
         return predicted_value;
     }
@@ -154,24 +107,17 @@ public class HoeffdingTree implements Serializable {
         this.weight = 0;
     }
 
-    public void setMajority_Voting_Weight(double correctly_classified, double instances_seen) {
-        this.weight = 1;
-    }
-
-    public void setWeighted_Voting_Weight(double correctly_classified, double instances_seen) {
+    public void setWeight(double correctly_classified, double instances_seen) {
         this.weight = correctly_classified / instances_seen;
     }
 
-    public void setDES_P_Weight(double correctly_classified, double instances_seen) {
-        this.weight = (correctly_classified / instances_seen) - 0.5;
-    }
 
-    public void setKNORA_U_Weight(double correctly_classified) {
-        this.weight = correctly_classified;
-    }
-
-    public double getWeight() {
+    public double getAccuracy() {
         return this.weight;
+    }
+
+    public double getErrorRate() {
+        return 1 - this.weight;
     }
 
     /**
@@ -180,7 +126,7 @@ public class HoeffdingTree implements Serializable {
      */
     public void initialize_m_features(int m, int Max, int htid) {
         this.m_features = Utilities.ReservoirSampling(m, Max);
-//        this.m_features = Utilities.SendAllPossibleCombinations(htid);
+//        this.m_features = HoeffdingTree.Utilities.SendAllPossibleCombinations(htid);
     }
 
     /**
@@ -202,7 +148,7 @@ public class HoeffdingTree implements Serializable {
      * <p> Print the selected features of tree </p>
      */
     public void print_m_features() {
-        System.out.print("HT "+hoeffding_tree_id+" Selected Features: ");
+        System.out.print("HT " + hoeffding_tree_id + " Selected Features: ");
         for (int m_feature : this.m_features) {
             System.out.print(m_feature + " ");
         }

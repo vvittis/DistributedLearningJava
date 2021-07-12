@@ -1,3 +1,5 @@
+package HoeffdingTree;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -94,7 +96,7 @@ public class Node implements Serializable {
     // Methods
 
     /**
-     * @param node      - For a given Node
+     * @param node      - For a given HoeffdingTree.Node
      * @param attribute - For a given Attribute
      * @return - Get the whole list containing the values of this attribute
      */
@@ -233,7 +235,7 @@ public class Node implements Serializable {
      */
     public void RemoveHT(Node node){
 
-        if( node == null ){ return; }
+        if( node == null ){ return;}
         else{
             RemoveHT(node.leftNode);
             RemoveHT(node.rightNode);
@@ -272,7 +274,7 @@ public class Node implements Serializable {
     }
 
     /**
-     * @param node For a given Node
+     * @param node For a given HoeffdingTree.Node
      * @return Whether or not a node needs a split
      * The splitting condition is:
      * If a have seen max_examples_seen and the given node is homogeneous
@@ -368,7 +370,7 @@ public class Node implements Serializable {
     }
 
     /**
-     * @param node Node which attempts to split
+     * @param node HoeffdingTree.Node which attempts to split
      * @return <p> Finds the best splitting attribute and splitting value for a given node based on Information Gain</p>
      */
     public double[][] FindTheBestAttribute(Node node) {
@@ -562,7 +564,7 @@ public class Node implements Serializable {
         node.information_gain = entropyNode;
 
         // Calculate entropy based on splitAttr,for left and right node
-        // Left Node
+        // Left HoeffdingTree.Node
         double entropyLeftNode;
         int totalCountLeftNode = labelCount0Up + labelCount1Up;
         log0 = Math.log((double) labelCount0Up / totalCountLeftNode) / Math.log(2);
@@ -573,7 +575,7 @@ public class Node implements Serializable {
         if (totalCountLeftNode == 0) { entropyLeftNode = 0; }
         else { entropyLeftNode = (-1) * (((double) labelCount0Up / totalCountLeftNode) * log0) + (-1) * (((double) labelCount1Up / totalCountLeftNode) * log1); }
 
-        // Right Node
+        // Right HoeffdingTree.Node
         double entropyRightNode;
         int totalCountRightNode = labelCount0Low + labelCount1Low;
         log0 = Math.log((double) labelCount0Low / totalCountRightNode) / Math.log(2);
