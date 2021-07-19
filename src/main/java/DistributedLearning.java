@@ -103,7 +103,7 @@ public class DistributedLearning
 
 
         // PERFORMANCE (ERROR-RATE) MONITORING SINK
-        partial_result.addSink(new FlinkKafkaProducer<>("clu02.softnet.tuc.gr:6667,clu03.softnet.tuc.gr:6667,clu04.softnet.tuc.gr:6667,clu06.softnet.tuc.gr:6667", "vvittis_visualize_topic9",
+        partial_result.addSink(new FlinkKafkaProducer<>("clu02.softnet.tuc.gr:6667,clu03.softnet.tuc.gr:6667,clu04.softnet.tuc.gr:6667,clu06.softnet.tuc.gr:6667", "vvittis_visualize_topic10",
                                (SerializationSchema<Tuple6<Integer, Integer, Integer, Integer, Double, Integer>>)
                                element -> (element.getField(5).toString() + "," + element.getField(4).toString() + "," + element.getField(0).toString()).getBytes()))
         .name("Visualizing Performance Metrics");
