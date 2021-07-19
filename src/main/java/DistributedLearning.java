@@ -38,8 +38,9 @@ public class DistributedLearning
          *
          *  The Web Front End of clink is on: http://clu01.softnet.tuc.gr:8081.
          */
-
-        final ParameterTool params = ParameterTool.fromArgs(args);
+        String propertiesFile = "/home/vvittis/DistributedLearningJava/.properties";
+        ParameterTool params = ParameterTool.fromPropertiesFile(propertiesFile);
+        // final ParameterTool params = ParameterTool.fromArgs(args);
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.getConfig().setGlobalJobParameters(params);
         Properties properties = new Properties();
@@ -47,11 +48,11 @@ public class DistributedLearning
         properties.setProperty("format", "raw");
 
         // PASSING USER'S PARAMETERS
-        int number_of_hoeffding_trees = Integer.parseInt(params.get("number_of_HT"));
-        int combination_function = Integer.parseInt(params.get("combination_function"));
-        double weighted_voting_parameter = Double.parseDouble(params.get("weighted_voting_parameter"));
-        int age_of_maturity = Integer.parseInt(params.get("age_of_maturity"));
-        int drift_detection_method_id = Integer.parseInt(params.get("drift_detection_method_id"));
+        int number_of_hoeffding_trees = Integer.parseInt(params.getInt("number_of_HT"));
+        int combination_function = Integer.parseInt(params.getRequired("combination_function"));
+        double weighted_voting_parameter = Double.parseDouble(params.getRequired("weighted_voting_parameter"));
+        int age_of_maturity = Integer.parseInt(params.getRequired("age_of_maturity"));
+        int drift_detection_method_id = Integer.parseInt(params.getRequired("drift_detection_method_id"));
 
         //KAFKA INPUT SOURCE
         /* Topics: health_dataset_topic SeaDriftTopic SineTopic */
