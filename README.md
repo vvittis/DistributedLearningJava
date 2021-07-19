@@ -46,3 +46,4 @@ The input stream is structured as follows (field_1,...,field_n,true_label,purpos
 #### Apache Flink Visualizer Plan
 
 Print the execution Plan: https://flink.apache.org/visualizer/
+

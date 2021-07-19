@@ -67,16 +67,33 @@ public class DistributedLearning
             @Override
             public void flatMap(String input_stream, Collector<Tuple3<String, Integer, Integer>> out)
             {
-                PoissonDistribution poisson = new PoissonDistribution(6);
-                for (int i = 1; i <= number_of_hoeffding_trees; i++)
-                {
-                    int valueOfPoisson = poisson.sample();
 
-                    if(valueOfPoisson > 0 )
+                String[] split_input_stream = input_stream.toString().split(",");
+                int purpose_id = Integer.parseInt(split_input_stream[split_input_stream.length - 2]);
+                int instance_id = Integer.parseInt(split_input_stream[split_input_stream.length - 1]);
+                if(purpose_id == -5 )
+                {   // Testing
+                    for (int i = 1; i <= number_of_hoeffding_trees; i++)
                     {
-                        out.collect(new Tuple3<>(input_stream.trim(), i, valueOfPoisson));
+                        out.collect(new Tuple3<>(input_stream.trim(), i, 0));
                     }
-                    
+                }
+                else if (purpose_id == 5)
+                {   // Training 
+                    PoissonDistribution poisson = new PoissonDistribution(1);
+                    for (int i = 1; i <= number_of_hoeffding_trees; i++)
+                    {
+                        int valueOfPoisson = poisson.sample();
+
+                        if(valueOfPoisson > 0 )
+                        {
+                            out.collect(new Tuple3<>(input_stream.trim(), i, valueOfPoisson));
+                        }
+                        else{
+                            System.out.println("Instanceid "+instance_id+" did not go to HoeffdingTree: "+ i);
+                        }
+
+                    }
                 }
             }
         }).name("Online Bagging and Data Distribution");
@@ -178,6 +195,7 @@ public class DistributedLearning
                 HoeffdingTree hoeffdingTree = new HoeffdingTree();
                 hoeffdingTree.CreateHoeffdingTree(2, 2, 200, 0.1, 0.05, this.combination_function, hoeffding_tree_id);
                 hoeffdingTreeValueState.update(hoeffdingTree);
+                hoeffdingTree.print_m_features();
                 /* Also we create the a new ConceptDriftDetector.ConceptDriftDetector */
                 //ConceptDriftDetector conceptDriftDetector = ConceptDriftFactory.createConceptDriftDetector(drift_detection_method_id);
                 //ConceptDriftDetectorValueState.update(conceptDriftDetector);
@@ -220,6 +238,7 @@ public class DistributedLearning
                 else if (purpose_id == -10 || purpose_id == -5)
                 {
                     HoeffdingTree ht = hoeffdingTreeValueState.value();
+
                     prediction = ht.TestHoeffdingTree(ht.root, features, purpose_id);
                     /* Despite the fact that we only test the Hoeffding Tree and we do not update it calling UpdateHoeffdingTree function,
                      * we have to update the state because internally TestHoeffdingTree function sets the HT's weight.
@@ -501,12 +520,12 @@ public class DistributedLearning
 
                     if (acc.class1_weight > acc.class0_weight)
                     {
-                        System.out.println("We are " + i + " 456 Weighted Voting method:" + this.combination_function + " ID: " + acc.instance_id + " C0: " + acc.class0_weight + " C1: " + acc.class1_weight + " ... P: 1, T: " + acc.true_class);
+                        // System.out.println("We are " + i + " 456 Weighted Voting method:" + this.combination_function + " ID: " + acc.instance_id + " C0: " + acc.class0_weight + " C1: " + acc.class1_weight + " ... P: 1, T: " + acc.true_class);
                         return 1.0;
                     }
                     else if (acc.class0_weight > acc.class1_weight)
                     {
-                        System.out.println("We are " + i + " 123 Weighted Voting method:" + this.combination_function + " ID: " + acc.instance_id + " C0: " + acc.class0_weight + " C1: " + acc.class1_weight + " ... P: 0, T: " + acc.true_class);
+                        // System.out.println("We are " + i + " 123 Weighted Voting method:" + this.combination_function + " ID: " + acc.instance_id + " C0: " + acc.class0_weight + " C1: " + acc.class1_weight + " ... P: 0, T: " + acc.true_class);
                         //                    System.out.println("Instance id " + acc.instance_id + " has acc.class0_weight " + acc.class0_weight + " from one class and acc.class1_weight " + acc.class1_weight + " ... so final prediction is 0");
                         return 0.0;
                     }
