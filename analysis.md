@@ -27,30 +27,34 @@ Also, we are expecting 2.552 predictions. 116 tests with 22 predictions each.
 
 ### Data Division on Cluster Nodes
 
-flink@clu04
+ flink@clu02
 flink@clu09
-flink@clu13
-flink@clu16
+ flink@clu12
 
+Cluster Node Name 	| Bytes Received| Records Received | Records Sent |
+flink@clu15       	| 	   	16.5 MB |    	   443,750 |          812 |
+flink@clu02		  	| 	   	14.1 MB | 		   379,888 | 		  696 |
+flink@clu19 	  	| 		11.7 MB |	       316,300 |		  580 | 
+flink@clu12		  	| 		9.39 MB |	       253,142 | 	      464 |
 HT1  =>
 HT2  =>
-HT3  =>
-HT4  => flink@clu04
+HT3  => flink@clu19
+HT4  =>  flink@clu19
 HT5  =>
 HT6  =>
-HT7  =>
-HT8  =>
-HT9  =>
-HT10 =>
-HT11 =>
-HT12 =>
-HT13 => flink@clu04
-HT14 =>
-HT15 =>
-HT16 =>
-HT17 => flink@clu04
-HT18 => flink@clu04
+HT7  => flink@clu19
+HT8  => flink@clu02
+HT9  => flink@clu15
+HT10 => flink@clu02
+HT11 => flink@clu02
+HT12 => flink@clu15
+HT13 => flink@clu19
+HT14 => flink@clu15
+HT15 => flink@clu02
+HT16 => flink@clu19
+HT17 => flink@clu15
+HT18 => flink@clu15
 HT19 =>
-HT20 => flink@clu04
-HT21 =>
-HT22 =>
+HT20 => flink@clu15
+HT21 => flink@clu02
+HT22 => flink@clu15
