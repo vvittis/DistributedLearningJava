@@ -27,15 +27,15 @@ Also, we are expecting 2.552 predictions. 116 tests with 22 predictions each.
 
 ### Data Division on Cluster Nodes
 
- flink@clu02
-flink@clu09
- flink@clu12
+
 
 Cluster Node Name 	| Bytes Received| Records Received | Records Sent |
+
 flink@clu15       	| 	   	16.5 MB |    	   443,750 |          812 |
 flink@clu02		  	| 	   	14.1 MB | 		   379,888 | 		  696 |
 flink@clu19 	  	| 		11.7 MB |	       316,300 |		  580 | 
 flink@clu12		  	| 		9.39 MB |	       253,142 | 	      464 |
+
 HT1  =>
 HT2  =>
 HT3  => flink@clu19
@@ -58,3 +58,26 @@ HT19 =>
 HT20 => flink@clu15
 HT21 => flink@clu02
 HT22 => flink@clu15
+
+
+20/7
+
+application_1614183653371_0142
+
+Latest Apache Flink Job: http://clu02.softnet.tuc.gr:32870
+
+./bin/flink run -d -p 3 -m yarn-cluster -yid application_1614183653371_0142 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.0-SNAPSHOT.jar --number_of_HT 1 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 3
+
+already a kafka topic vvittis_SineTopic
+
+1) Trying make a properties file with inputs 
+
+--number_of_HT 1 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 3
+
+Not done yet
+
+
+2) Implement DDM inside State
+
+
+
