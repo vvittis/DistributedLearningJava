@@ -9,7 +9,9 @@ public class ConceptDriftFactory {
         }else if( drift_detection_method_id == 2){
             return new EDDM();
         }
-        return null;
+        else{
+            return new EDDM();
+        }
     }
 
 

@@ -84,7 +84,7 @@ public class DistributedLearning {
                                 if (valueOfPoisson > 0) {
                                     out.collect(new Tuple3<>(input_stream.trim(), i, valueOfPoisson));
                                 } else {
-//                                    System.out.println("Instance id " + instance_id + " did not go to HoeffdingTree: " + i);
+                                    //                                    System.out.println("Instance id " + instance_id + " did not go to HoeffdingTree: " + i);
                                 }
 
                             }
@@ -114,7 +114,7 @@ public class DistributedLearning {
 
 
         // PERFORMANCE (ERROR-RATE) MONITORING SINK
-        partial_result.addSink(new FlinkKafkaProducer<>("clu02.softnet.tuc.gr:6667", "vvittis_visualize_topic3",
+        partial_result.addSink(new FlinkKafkaProducer<>("clu02.softnet.tuc.gr:6667", "vvittis_visualize_topic6",
                 (SerializationSchema<Tuple6<Integer, Integer, Integer, Integer, Double, Integer>>)
                         element -> (element.getField(5).toString() + "," + element.getField(4).toString() + "," + element.getField(0).toString()).getBytes()))
                 .name("Visualizing Performance Metrics");
@@ -182,12 +182,14 @@ public class DistributedLearning {
                 empty_state.update(false);
                 /* If state is empty, we have to Create a new HoeffdingTree.HoeffdingTree. */
                 HoeffdingTree hoeffdingTree = new HoeffdingTree();
-                hoeffdingTree.CreateHoeffdingTree(2, 2, 200, 0.1, 0.05, this.combination_function, hoeffding_tree_id,0);
+                hoeffdingTree.CreateHoeffdingTree(2, 2, 200, 0.1, 0.05, this.combination_function, hoeffding_tree_id, 0);
                 hoeffdingTreeValueState.update(hoeffdingTree);
                 hoeffdingTree.print_m_features();
                 /* Also we create the a new ConceptDriftDetector.ConceptDriftDetector */
+
                 ConceptDriftDetector conceptDriftDetector = ConceptDriftFactory.createConceptDriftDetector(drift_detection_method_id);
                 ConceptDriftDetectorValueState.update(conceptDriftDetector);
+
 
             }
             /* We have adopted the "age of maturity" notion which provides to the HT to have a slack in order to stabilize its performance.
@@ -209,68 +211,68 @@ public class DistributedLearning {
                     conceptDriftDetector.updateCurrentDriftStatus();
                     int updated_stream_status = conceptDriftDetector.getCurrentDriftStatus();
 
-                    System.out.println("Current status before testing: " + current_stream_status +  " Signal after testing " + current_signal +" makes the updated status " + updated_stream_status +  " for " + instance_id);
+                    System.out.println("Current status before testing: " + current_stream_status + " Signal after testing " + current_signal + " makes the updated status " + updated_stream_status + " for " + instance_id);
 
-                    System.out.println("Training tree "+ht.hoeffding_tree_id+" in phase "+ ht.tree_phase+" id "+ instance_id+" with error-rate "+ht.getErrorRate());
+                    System.out.println("Training tree " + ht.hoeffding_tree_id + " in phase " + ht.tree_phase + " id " + instance_id + " with error-rate " + ht.getErrorRate());
                     ConceptDriftDetectorValueState.update(conceptDriftDetector);
-//                        System.out.println("SP          phase: instance id " + instance_id + " Error Rate " + ht.getErrorRate());
-                        /*Like Oza and Russell's Online Bagging Algorithm. Authors mention that:
-                        "As each training example is presented ot our algorithm, for each base model, choose the example K - Poisson(1) times and update the base model accordingly." */
+                    //                        System.out.println("SP          phase: instance id " + instance_id + " Error Rate " + ht.getErrorRate());
+                    /*Like Oza and Russell's Online Bagging Algorithm. Authors mention that:
+                    "As each training example is presented ot our algorithm, for each base model, choose the example K - Poisson(1) times and update the base model accordingly." */
                     for (int i = 0; i < instance_weight; i++) {
                         ht.UpdateHoeffdingTree(ht.root, features);
                     }
                     //error_rate = ht.getErrorRate();
                     hoeffdingTreeValueState.update(ht);
 
+                    if (drift_detection_method_id != 0) {
+                        if (updated_stream_status == 1) {
+                            // WARNING PHASE
 
-                    if (updated_stream_status == 1 ) {
-                        // WARNING PHASE
+                            if (empty_background_state.value()) {
+                                System.out.println("===================================Warning Phase===================================");
+                                System.out.println("Background Tree " + ht.tree_phase + " Just Created ");
+                                empty_background_state.update(false);
+                                //                                System.out.println("WS          Signal: instance id " + instance_id);
+                                // Warning Signal. Create & Train the Background Tree
+                                HoeffdingTree background_hoeffdingTree = new HoeffdingTree();
+                                background_hoeffdingTree.CreateHoeffdingTree(2, 2, 200, 0.1, 0.05, this.combination_function, hoeffding_tree_id, 1);
+                                background_hoeffdingTree.print_m_features();
+                                background_hoeffdingTreeValueState.update(background_hoeffdingTree);
+                            }
 
-                        if (empty_background_state.value()) {
-                            System.out.println("===================================Warning Phase===================================");
-                            System.out.println("Background Tree "+ ht.tree_phase+" Just Created ");
-                            empty_background_state.update(false);
-//                                System.out.println("WS          Signal: instance id " + instance_id);
-                            // Warning Signal. Create & Train the Background Tree
-                            HoeffdingTree background_hoeffdingTree = new HoeffdingTree();
-                            background_hoeffdingTree.CreateHoeffdingTree(2, 2, 200, 0.1, 0.05, this.combination_function, hoeffding_tree_id,1);
-                            background_hoeffdingTree.print_m_features();
+                            HoeffdingTree background_hoeffdingTree = background_hoeffdingTreeValueState.value();
+
+                            background_hoeffdingTree.TestHoeffdingTree(background_hoeffdingTree.root, features, purpose_id);
+                            System.out.println("Also background training background tree " + background_hoeffdingTree.hoeffding_tree_id + " in phase " + background_hoeffdingTree.tree_phase + " id " + instance_id + " with error-rate " + background_hoeffdingTree.getErrorRate());
+
+                            //                            System.out.println("WP          phase: instance id " + instance_id + " Error Rate " + background_hoeffdingTree.getErrorRate());
+                            for (int i = 0; i < instance_weight; i++) {
+                                background_hoeffdingTree.UpdateHoeffdingTree(background_hoeffdingTree.root, features);
+                            }
                             background_hoeffdingTreeValueState.update(background_hoeffdingTree);
+                        } else if (current_stream_status == 1 && updated_stream_status == 0) {
+                            //                            System.out.println("DS          Signal: instance id " + instance_id);
+                            if (current_signal == 2) {
+                                System.out.println("=============================Stable Phase/ Drift===================================");
+                                System.out.println("Stable phase after a Drift Signal");
+                                // Drift Signal. Do the Switch
+                                HoeffdingTree background_tree = background_hoeffdingTreeValueState.value();
+                                hoeffdingTreeValueState.update(background_tree);
+                                empty_background_state.update(true);
+                                System.out.println("Making the switch and resetting the Drift Detector");
+                                //RESET EVERYTHING
+                                conceptDriftDetector.ResetConceptDrift();
+                            } else if (current_signal == -1) {
+                                System.out.println("=========================Stable Phase/ False Alarm=================================");
+                                System.out.println("Stable phase after a false alarm");
+                                //                            System.out.println("FAS         False Alarm Signal: instance id " + instance_id);
+                                background_hoeffdingTreeValueState.clear();
+                                empty_background_state.update(true);
+                                // False Alarm Signal. Delete Background Tree
+
+                            }
+                            //System.out.println("Training HT with id " + hoeffding_tree_id + " which has error-rate " + ht.getErrorRate() + " predicts " + prediction + " for the instance with id " + instance_id + " while the true label is " + true_label);
                         }
-
-                        HoeffdingTree background_hoeffdingTree = background_hoeffdingTreeValueState.value();
-
-                        background_hoeffdingTree.TestHoeffdingTree(background_hoeffdingTree.root, features, purpose_id);
-                        System.out.println("Also background training background tree "+background_hoeffdingTree.hoeffding_tree_id+" in phase "+ background_hoeffdingTree.tree_phase+" id "+ instance_id+" with error-rate "+background_hoeffdingTree.getErrorRate());
-
-//                            System.out.println("WP          phase: instance id " + instance_id + " Error Rate " + background_hoeffdingTree.getErrorRate());
-                        for (int i = 0; i < instance_weight; i++) {
-                            background_hoeffdingTree.UpdateHoeffdingTree(background_hoeffdingTree.root, features);
-                        }
-                        background_hoeffdingTreeValueState.update(background_hoeffdingTree);
-                    }
-                    else if (current_stream_status == 1 && updated_stream_status == 0) {
-//                            System.out.println("DS          Signal: instance id " + instance_id);
-                        if (current_signal == 2) {
-                            System.out.println("=============================Stable Phase/ Drift===================================");
-                            System.out.println("Stable phase after a Drift Signal");
-                            // Drift Signal. Do the Switch
-                            HoeffdingTree background_tree = background_hoeffdingTreeValueState.value();
-                            hoeffdingTreeValueState.update(background_tree);
-                            empty_background_state.update(true);
-                            System.out.println("Making the switch and resetting the Drift Detector");
-                            //RESET EVERYTHING
-                            conceptDriftDetector.ResetConceptDrift();
-                        } else if (current_signal == -1) {
-                            System.out.println("=========================Stable Phase/ False Alarm=================================");
-                            System.out.println("Stable phase after a false alarm");
-//                            System.out.println("FAS         False Alarm Signal: instance id " + instance_id);
-                            background_hoeffdingTreeValueState.clear();
-                            empty_background_state.update(true);
-                            // False Alarm Signal. Delete Background Tree
-
-                        }
-                        //System.out.println("Training HT with id " + hoeffding_tree_id + " which has error-rate " + ht.getErrorRate() + " predicts " + prediction + " for the instance with id " + instance_id + " while the true label is " + true_label);
                     }
 
                     collector.collect(new Tuple6<>(instance_id, prediction, -1, purpose_id, ht.getErrorRate(), hoeffding_tree_id));
@@ -490,7 +492,7 @@ public class DistributedLearning {
                         //                    System.out.println("Instance id " + acc.instance_id + " has acc.class0_weight " + acc.class0_weight + " from one class and acc.class1_weight " + acc.class1_weight + " ... so final prediction is 0");
                         return 0.0;
                     } else {
-//                        System.out.println("(Both class counters are 0. None of the predictions surpassed the given threshold)\nWe return the best returned one. Weighted Voting Method: " + acc.instance_id + " P: " + acc.best_prediction[0] + " , T: " + acc.true_class);
+                        //                        System.out.println("(Both class counters are 0. None of the predictions surpassed the given threshold)\nWe return the best returned one. Weighted Voting Method: " + acc.instance_id + " P: " + acc.best_prediction[0] + " , T: " + acc.true_class);
                         return acc.best_prediction[0];
                     }
                 }
@@ -516,7 +518,7 @@ public class DistributedLearning {
                         //                    System.out.println("Instance id " + acc.instance_id + " has acc.class0_weight " + acc.class0_weight + " from one class and acc.class1_weight " + acc.class1_weight + " ... so final prediction is 0");
                         return 0.0;
                     } else {
-//                        System.out.println("(Both class counters are 0. None of the predictions surpassed the given threshold)");
+                        //                        System.out.println("(Both class counters are 0. None of the predictions surpassed the given threshold)");
                         return 0.0;
                     }
 
