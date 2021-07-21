@@ -2,6 +2,7 @@ import ConceptDriftDetector.ConceptDriftDetector;
 import ConceptDriftDetector.ConceptDriftFactory;
 import HoeffdingTree.HoeffdingTree;
 import org.apache.commons.math3.distribution.PoissonDistribution;
+import org.apache.flink.api.common.JobExecutionResult;
 import org.apache.flink.api.common.functions.*;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
@@ -23,6 +24,7 @@ import org.apache.flink.configuration.Configuration;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 
 public class DistributedLearning {
@@ -57,7 +59,7 @@ public class DistributedLearning {
         //KAFKA INPUT SOURCE
         /* Topics: health_dataset_topic SeaDriftTopic SineTopic */
         DataStream<String> stream = env
-                .addSource(new FlinkKafkaConsumer<>("vvittis_SineTopic", new SimpleStringSchema(), properties).setStartFromEarliest())
+                .addSource(new FlinkKafkaConsumer<>("vvittis_SineTopic2", new SimpleStringSchema(), properties).setStartFromEarliest())
                 .name("Kafka Input Source");
 
 
@@ -65,11 +67,12 @@ public class DistributedLearning {
         DataStream<Tuple3<String, Integer, Integer>> structured_stream =
                 stream.flatMap(new FlatMapFunction<String, Tuple3<String, Integer, Integer>>() {
                     @Override
-                    public void flatMap(String input_stream, Collector<Tuple3<String, Integer, Integer>> out) {
+                    public void flatMap(String input_stream, Collector<Tuple3<String, Integer, Integer>> out){
 
                         String[] split_input_stream = input_stream.toString().split(",");
                         int purpose_id = Integer.parseInt(split_input_stream[split_input_stream.length - 2]);
                         int instance_id = Integer.parseInt(split_input_stream[split_input_stream.length - 1]);
+
                         if (purpose_id == -5) {
                             // Testing
                             for (int i = 1; i <= number_of_hoeffding_trees; i++) {
@@ -87,6 +90,11 @@ public class DistributedLearning {
                                     //                                    System.out.println("Instance id " + instance_id + " did not go to HoeffdingTree: " + i);
                                 }
 
+                            }
+                        }
+                        else if (purpose_id == -1){
+                            for (int i = 1; i <= number_of_hoeffding_trees; i++) {
+                                out.collect(new Tuple3<>(input_stream.trim(), i, 0));
                             }
                         }
                     }
@@ -114,13 +122,14 @@ public class DistributedLearning {
 
 
         // PERFORMANCE (ERROR-RATE) MONITORING SINK
-        partial_result.addSink(new FlinkKafkaProducer<>("clu02.softnet.tuc.gr:6667", "vvittis_visualize_topic6",
+        partial_result.addSink(new FlinkKafkaProducer<>("clu02.softnet.tuc.gr:6667", "vvittis_visualize_topic9",
                 (SerializationSchema<Tuple6<Integer, Integer, Integer, Integer, Double, Integer>>)
                         element -> (element.getField(5).toString() + "," + element.getField(4).toString() + "," + element.getField(0).toString()).getBytes()))
                 .name("Visualizing Performance Metrics");
 
         System.out.println(env.getExecutionPlan());
-        env.execute("Distributed Random Forest vvittis");
+        JobExecutionResult result = env.execute("Distributed Random Forest vvittis");
+
 
     }
 
@@ -211,9 +220,9 @@ public class DistributedLearning {
                     conceptDriftDetector.updateCurrentDriftStatus();
                     int updated_stream_status = conceptDriftDetector.getCurrentDriftStatus();
 
-                    System.out.println("Current status before testing: " + current_stream_status + " Signal after testing " + current_signal + " makes the updated status " + updated_stream_status + " for " + instance_id);
+                    // System.out.println("Current status before testing: " + current_stream_status + " Signal after testing " + current_signal + " makes the updated status " + updated_stream_status + " for " + instance_id);
 
-                    System.out.println("Training tree " + ht.hoeffding_tree_id + " in phase " + ht.tree_phase + " id " + instance_id + " with error-rate " + ht.getErrorRate());
+                    // System.out.println("Training tree " + ht.hoeffding_tree_id + " in phase " + ht.tree_phase + " id " + instance_id + " with error-rate " + ht.getErrorRate());
                     ConceptDriftDetectorValueState.update(conceptDriftDetector);
                     //                        System.out.println("SP          phase: instance id " + instance_id + " Error Rate " + ht.getErrorRate());
                     /*Like Oza and Russell's Online Bagging Algorithm. Authors mention that:
@@ -229,21 +238,21 @@ public class DistributedLearning {
                             // WARNING PHASE
 
                             if (empty_background_state.value()) {
-                                System.out.println("===================================Warning Phase===================================");
-                                System.out.println("Background Tree " + ht.tree_phase + " Just Created ");
+                                // System.out.println("===================================Warning Phase===================================");
+                                // System.out.println("Background Tree " + ht.tree_phase + " Just Created ");
                                 empty_background_state.update(false);
                                 //                                System.out.println("WS          Signal: instance id " + instance_id);
                                 // Warning Signal. Create & Train the Background Tree
                                 HoeffdingTree background_hoeffdingTree = new HoeffdingTree();
                                 background_hoeffdingTree.CreateHoeffdingTree(2, 2, 200, 0.1, 0.05, this.combination_function, hoeffding_tree_id, 1);
-                                background_hoeffdingTree.print_m_features();
+                                // background_hoeffdingTree.print_m_features();
                                 background_hoeffdingTreeValueState.update(background_hoeffdingTree);
                             }
 
                             HoeffdingTree background_hoeffdingTree = background_hoeffdingTreeValueState.value();
 
                             background_hoeffdingTree.TestHoeffdingTree(background_hoeffdingTree.root, features, purpose_id);
-                            System.out.println("Also background training background tree " + background_hoeffdingTree.hoeffding_tree_id + " in phase " + background_hoeffdingTree.tree_phase + " id " + instance_id + " with error-rate " + background_hoeffdingTree.getErrorRate());
+                            // System.out.println("Also background training background tree " + background_hoeffdingTree.hoeffding_tree_id + " in phase " + background_hoeffdingTree.tree_phase + " id " + instance_id + " with error-rate " + background_hoeffdingTree.getErrorRate());
 
                             //                            System.out.println("WP          phase: instance id " + instance_id + " Error Rate " + background_hoeffdingTree.getErrorRate());
                             for (int i = 0; i < instance_weight; i++) {
@@ -253,18 +262,18 @@ public class DistributedLearning {
                         } else if (current_stream_status == 1 && updated_stream_status == 0) {
                             //                            System.out.println("DS          Signal: instance id " + instance_id);
                             if (current_signal == 2) {
-                                System.out.println("=============================Stable Phase/ Drift===================================");
-                                System.out.println("Stable phase after a Drift Signal");
+                                // System.out.println("=============================Stable Phase/ Drift===================================");
+                                // System.out.println("Stable phase after a Drift Signal");
                                 // Drift Signal. Do the Switch
                                 HoeffdingTree background_tree = background_hoeffdingTreeValueState.value();
                                 hoeffdingTreeValueState.update(background_tree);
                                 empty_background_state.update(true);
-                                System.out.println("Making the switch and resetting the Drift Detector");
+                                // System.out.println("Making the switch and resetting the Drift Detector");
                                 //RESET EVERYTHING
                                 conceptDriftDetector.ResetConceptDrift();
                             } else if (current_signal == -1) {
-                                System.out.println("=========================Stable Phase/ False Alarm=================================");
-                                System.out.println("Stable phase after a false alarm");
+                                // System.out.println("=========================Stable Phase/ False Alarm=================================");
+                                // System.out.println("Stable phase after a false alarm");
                                 //                            System.out.println("FAS         False Alarm Signal: instance id " + instance_id);
                                 background_hoeffdingTreeValueState.clear();
                                 empty_background_state.update(true);
@@ -295,6 +304,10 @@ public class DistributedLearning {
                     } else {
                         collector.collect(new Tuple6<>(instance_id, prediction, -1, purpose_id, ht.getErrorRate(), hoeffding_tree_id));
                     }
+                }
+                else if(purpose_id == -1){
+                    System.out.println(" End of Stream message");
+                    throw new Exception("End of Stream message");
                 }
                 age_of_maturity.update(age_of_maturity.value() + 1);
             } else if (age_of_maturity.value() <= age_of_maturity_input) {

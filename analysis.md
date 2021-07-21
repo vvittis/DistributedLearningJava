@@ -107,3 +107,24 @@ cd /usr/local/flink;
 ./bin/flink run -d -p 3 -m yarn-cluster -yid application_1614183653371_0143 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 1 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 3
 
 already a kafka topic vvittis_SineTopic
+
+
+
+Οπότε ή έχεις άπειρο χρόνο, άπειρα δεδομένα και απλά το σταματάς, 
+
+ή έχεις σταθερά δεδομένα και μετράς χρόνο μέχρι να επεξεργαστεί τα δεδομένα,
+
+ ή έχεις δεδομένα άπερια και σταθερό χρόνο και μετράς πόσο δεδομένα πέρασαν. Και η μετρικές που παίρνω είναι records Received/Duration
+
+Αυτά στο τι κάνω εγώ. 
+
+1.  0.Source__Kafka.KafkaConsumer.bytes-consumed-rate δεν κάνει receive κάνει μονο Send, 
+2. κοίτα το records received από το δεύτερο κουτάκι. 
+
+
+
+./bin/flink run -d -p 1 -m yarn-cluster -yid application_1614183653371_0143 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 32 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
+
+
+
+0.Machine_Learning_Model.numRecordsInPerSecond

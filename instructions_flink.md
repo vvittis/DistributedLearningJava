@@ -43,7 +43,7 @@ cd /usr/hdp/current/kafka-broker/bin
 
 ### See Apache Kafka Topics 
 
-cd /usr/hdp/current/kafka-broker/bin
+cd /usr/hdp/current/kafka-broker/bin;
 
 ./kafka-topics.sh --list --zookeeper clu01.softnet.tuc.gr:2182
 
