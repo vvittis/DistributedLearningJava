@@ -16,4 +16,19 @@ public class EDDM implements ConceptDriftDetector{
     public int getCurrentDriftStatus() {
         return 0;
     }
+
+    @Override
+    public int getSignal() {
+        return 0;
+    }
+
+    @Override
+    public void updateCurrentDriftStatus() {
+
+    }
+
+    @Override
+    public void ResetConceptDrift() {
+
+    }
 }

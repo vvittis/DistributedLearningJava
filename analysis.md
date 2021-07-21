@@ -79,5 +79,31 @@ Not done yet
 
 2) Implement DDM inside State
 
+I did it and uploaded the chart comparisons in Github.
+They seem all good. Except the fact that my version (Hoeffding Tree) scores better both with and without a concept drift detector. 
+
+There are two explenations for that. Either my base learner is just better, or the datasets are different.
+
+The latter is a little of because both datasets in papaer has been produced by the same generator.
+
+Let's assume that CHVT is better that C4.5
 
 
+How i did the testing. I implemented a mechanism in which when the user assigns to the variable drift_detection_method_id the value of 0 then they dictate that they do not want to use any dirft detection algorithm.
+
+Therefore, I changed the code of my pycharm script and I added two kafkaconnector listenning to two different kafka topics.
+
+I ran DistributedLearningJava without a drift detection method (by assigning 0) writing to kafka topic and then I reran my project with (option 1  aka DDM) writing it to a different kafka topic. The script reads from both of them and merges the plots into one.
+
+21/7
+
+
+'application_1614183653371_0143'.
+
+Latest Apache Flink Job http://clu02.softnet.tuc.gr:33418
+
+cd /usr/local/flink;
+
+./bin/flink run -d -p 3 -m yarn-cluster -yid application_1614183653371_0143 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 1 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 3
+
+already a kafka topic vvittis_SineTopic

@@ -10,6 +10,7 @@ public class HoeffdingTree implements Serializable {
     public double instances_seen;
     public double correctly_classified;
     public double weight;
+    public int tree_phase;
     public int combination_function;
     public int hoeffding_tree_id;
     public int[] m_features; // list of labels corresponding to samples of node
@@ -28,7 +29,7 @@ public class HoeffdingTree implements Serializable {
      *                                <p> Create the Hoeffding tree for given parameters </p>
      */
 
-    public void CreateHoeffdingTree(int m_features, int Max, int max_examples_seen, double delta, double tie_threshold, int combination_function_id, int hoeffding_tree_id) {
+    public void CreateHoeffdingTree(int m_features, int Max, int max_examples_seen, double delta, double tie_threshold, int combination_function_id, int hoeffding_tree_id, int background_tree_indicator) {
         root.CreateHT(m_features, max_examples_seen, delta, tie_threshold);
         instances_seen = 0.0;
         correctly_classified = 0.0;
@@ -36,6 +37,7 @@ public class HoeffdingTree implements Serializable {
         this.hoeffding_tree_id = hoeffding_tree_id;
         combination_function = combination_function_id;
         initialize_m_features(m_features, Max - 1, hoeffding_tree_id);
+        this.tree_phase = background_tree_indicator;
     }
 
     /**

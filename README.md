@@ -31,7 +31,11 @@ int weighted_voting_option = Integer.parseInt(params.get("weighted_voting_option
 int age_of_maturity = Integer.parseInt(params.get("age_of_maturity"));
 ```
 ``` java
-/* Drift Detection Method used */
+/* Drift Detection Method used 
+*  If drift_detection_method_id = 0 then No Concept Drift
+*  If drift_detection_method_id = 1 then DDM
+*  If drift_detection_method_id = 2 then EDDM
+*/
 int drift_detection_method_id = Integer.parseInt(params.get("drift_detection_method_id"));
 ```
 #### Kafka Input Stream
