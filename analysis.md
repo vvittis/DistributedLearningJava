@@ -128,3 +128,138 @@ already a kafka topic vvittis_SineTopic
 
 
 0.Machine_Learning_Model.numRecordsInPerSecond
+
+22/7
+
+
+
+WriteStreamToARFFFile -s (ConceptDriftStream -s (generators.AgrawalGenerator -f 3 -b) -d (ConceptDriftStream -s (generators.AgrawalGenerator -f 5 -b) -d (ConceptDriftStream -s (generators.AgrawalGenerator -f 9 -b) -d (ConceptDriftStream -s (generators.AgrawalGenerator -b) -d (ConceptDriftStream -s (generators.AgrawalGenerator -f 3 -b) -d (generators.AgrawalGenerator -f 5 -b) -p 2750000 -w 10000) -p 2000000 -w 10000) -p 1500000 -w 10000) -p 750000 -w 10000) -p 500000 -w 10000) -f C:\Users\kryst\Desktop\agrawal_dataset.arff 
+
+-m 10000
+
+EvaluatePrequential -l bayes.NaiveBayes -s (ConceptDriftStream -s generators.AgrawalGenerator -d (ConceptDriftStream -s (generators.AgrawalGenerator -f 2) -d (ConceptDriftStream -s generators.AgrawalGenerator -d (generators.AgrawalGenerator -f 4) -p 25000 -w 1) -p 25000 -w 1) -p 25000 -w 1) -i 100000 -f 1000
+
+
+
+@relation 'generators.AgrawalGenerator -f 3 -b'
+
+@attribute salary numeric
+@attribute commission numeric
+@attribute age numeric
+
+@attribute elevel { level0, => 0
+                    level1, => 1
+                    level2, => 2
+                    level3, => 3
+                    level4} => 4
+
+
+Agrawal Dataset
+@relation 'generators.AgrawalGenerator -f 3 -b'
+@attribute salary numeric
+@attribute commission numeric
+@attribute age numeric
+@attribute elevel {0,1,2,3,4}
+@attribute car {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20}
+@attribute zipcode {1,2,3,4,5,6,7,8,9}
+@attribute hvalue numeric
+@attribute hyears numeric
+@attribute loan numeric
+@attribute class {1,0}
+@data
+
+
+./bin/flink run -d -p 1 -m yarn-cluster -yid application_1614183653371_0143 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 32 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
+
+23/7 
+
+Make sure that the project is in a good shape
+
+Rerun the experiment with and without DDM.
+
+
+'application_1614183653371_0147'.
+
+
+http://clu09.softnet.tuc.gr:36124
+
+### Original Sine datset
+Run Without DDM
+
+./bin/flink run -d -p 3 -m yarn-cluster -yid application_1614183653371_0147 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 1 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 0
+
+Rum With DDM
+
+./bin/flink run -d -p 3 -m yarn-cluster -yid application_1614183653371_0147 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 1 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
+
+Results are around the same.
+
+
+### MOA Sine dataset
+
+First of all, you will understand if there are drifts in the plot without drift detector.
+
+See the resutled plot and maybe you will need to change the drift intervals from gradual to a more abrupt drift.
+
+There are 4 attributes and we select 2 out of them. So there are 6 possible combinations. Therefore, our trees will be 6.
+
+We are expecting 11.376.000 instances to pass.
+
+Run Without DDM
+
+./bin/flink run -d -p 3 -m yarn-cluster -yid application_1614183653371_0147 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 1 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 0
+
+With DDM
+
+./bin/flink run -d -p 6 -m yarn-cluster -yid application_1614183653371_0147 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 1 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 
+
+
+Things did not go as expected.
+
+See sine_datset_3M.png
+
+I made a 3M sine with abrupt without luck
+
+
+Let's make a smaller one about 100k and see what is going on
+
+WriteStreamToARFFFile -s (ConceptDriftStream -s (generators.SineGenerator -b) -d (ConceptDriftStream -s (generators.SineGenerator -f 2 -b) -d (ConceptDriftStream -s (generators.SineGenerator -f 3 -b) -d (ConceptDriftStream -s (generators.SineGenerator -f 4 -b) -d (ConceptDriftStream -s (generators.SineGenerator -f 2 -b) -d (generators.SineGenerator -f 3 -b) -p 80000 -w 1) -p 60000 -w 100) -p 40000 -w 1 -r 2) -p 20000 -w 1 -r 3) -p 10000 -w 1) -f C:\Users\kryst\Desktop\sine_dataset_100k.arff -m 100000 -h
+
+
+So, testing with 100k everything went as planned, the drift detector managed to decrease the error-rate.
+The reason why DDM didn't show the expected behavior is because the expectation was wrong.
+
+As I saw in the RDDM paper in DDM detector, a great number of errors are required in order to drigger either the warning signal or the drift signal.
+
+So, when I was running the experiments with 3million instances, the fluctuation of the error was not significant enough in order to enter into a drift phase.
+
+
+Hence, my experiments were fine but DDM could not cope with the datastream
+
+Also, MOA creates correctly the datastreams BUT 10.000 width during the drift is way to many and I think I have to rewrite all the datasets.
+
+
+So, I have to make a decision. Should I write RDDM or just test the scalability only with DDM.
+
+The most computational cost effective is the parrallel training of both the main tree and the background tree. So, IF THE DDM enters in mine WARNING PHASE, it is ok to test the scalability as such.
+
+It may sound paradox but as worsen the DDM is and therefore the more computation requires then better for scalability.
+
+So, after all that I am gonna grab a coffee and I will run the scalability tests.
+
+The questions are: 
+
+Does it matter if the HTs have the same features to be trained?
+
+Do I want to make a graph with all HTs error-rates with and without drift detector?
+
+
+First of all, I have to make a 100k Agrawal dataset in order to see if my only Hoeffding Tree can handle such a dadaset. (because I transformed some categorical to numerical attributes.)
+
+
+If YES, I will test with the 3M. If NO, then just be positive. As Kontaxakis said "I dont care about if it is right or wrong but if it scalable."
+
+The 100k AGRAWAL will be only for educational purposes.
+
+
+You have to find another solution than RDDM, in order to tackle the same problem AND combine it with the diversity solution that you thought. See the survey paper about diversity techniques. I believe that there are many solutions that you dont aknoweldge right now.

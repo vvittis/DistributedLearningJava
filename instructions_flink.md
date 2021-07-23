@@ -51,7 +51,7 @@ cd /usr/hdp/current/kafka-broker/bin;
 
 cd /usr/hdp/current/kafka-broker/bin
 
-./kafka-topics.sh --delete --zookeeper clu01.softnet.tuc.gr:2182 --topic vvittis_visualize_topic12
+./kafka-topics.sh --delete --zookeeper clu01.softnet.tuc.gr:2182 --topic vvittis_SineTopic
 
 
 Hadoop All applications: http://clu01.softnet.tuc.gr:8188
