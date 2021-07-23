@@ -61,7 +61,7 @@ public class DistributedLearning
         //KAFKA INPUT SOURCE
         /* Topics: health_dataset_topic SeaDriftTopic SineTopic */
         DataStream<String> stream = env
-                                    .addSource(new FlinkKafkaConsumer<>("vvittis_Agrawal_100k", new SimpleStringSchema(), properties).setStartFromEarliest())
+                                    .addSource(new FlinkKafkaConsumer<>("vvittis_Agrawal_3M", new SimpleStringSchema(), properties).setStartFromEarliest())
                                     .name("Kafka Input Source");
 
 
@@ -137,10 +137,10 @@ public class DistributedLearning
 
 
         // PERFORMANCE (ERROR-RATE) MONITORING SINK
-        partial_result.addSink(new FlinkKafkaProducer<>("clu02.softnet.tuc.gr:6667", "vvittis_visualize_topic_agrawal2",
-                               (SerializationSchema<Tuple6<Integer, Integer, Integer, Integer, Double, Integer>>)
-                               element -> (element.getField(5).toString() + "," + element.getField(4).toString() + "," + element.getField(0).toString()).getBytes()))
-        .name("Visualizing Performance Metrics");
+        // partial_result.addSink(new FlinkKafkaProducer<>("clu02.softnet.tuc.gr:6667", "vvittis_visualize_topic_agrawal2",
+        //                        (SerializationSchema<Tuple6<Integer, Integer, Integer, Integer, Double, Integer>>)
+        //                        element -> (element.getField(5).toString() + "," + element.getField(4).toString() + "," + element.getField(0).toString()).getBytes()))
+        // .name("Visualizing Performance Metrics");
 
         System.out.println(env.getExecutionPlan());
         JobExecutionResult result = env.execute("Distributed Random Forest vvittis");
@@ -210,7 +210,7 @@ public class DistributedLearning
                 empty_state.update(false);
                 /* If state is empty, we have to Create a new HoeffdingTree.HoeffdingTree. */
                 HoeffdingTree hoeffdingTree = new HoeffdingTree();
-                hoeffdingTree.CreateHoeffdingTree(7, 9, 200, 0.0001, 0.05, this.combination_function, hoeffding_tree_id, 0);
+                hoeffdingTree.CreateHoeffdingTree(7, 9, 200, 0.01, 0.05, this.combination_function, hoeffding_tree_id, 0);
                 hoeffdingTreeValueState.update(hoeffdingTree);
                 hoeffdingTree.print_m_features();
                 /* Also we create the a new ConceptDriftDetector.ConceptDriftDetector */
@@ -269,7 +269,7 @@ public class DistributedLearning
                                 //                                System.out.println("WS          Signal: instance id " + instance_id);
                                 // Warning Signal. Create & Train the Background Tree
                                 HoeffdingTree background_hoeffdingTree = new HoeffdingTree();
-                                background_hoeffdingTree.CreateHoeffdingTree(7, 9, 200, 0.0001, 0.05, this.combination_function, hoeffding_tree_id, 1);
+                                background_hoeffdingTree.CreateHoeffdingTree(7, 9, 200, 0.01, 0.05, this.combination_function, hoeffding_tree_id, 1);
                                 // background_hoeffdingTree.print_m_features();
                                 background_hoeffdingTreeValueState.update(background_hoeffdingTree);
                             }

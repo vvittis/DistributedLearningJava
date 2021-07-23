@@ -263,3 +263,128 @@ The 100k AGRAWAL will be only for educational purposes.
 
 
 You have to find another solution than RDDM, in order to tackle the same problem AND combine it with the diversity solution that you thought. See the survey paper about diversity techniques. I believe that there are many solutions that you dont aknoweldge right now.
+
+Testing Agrawal 100k...
+
+Everyting good enough. The only thing that consernes me is the reason why DDM version of my project has an initial unusual high error-rate.
+
+[Plot] Figures/agrawal_dataset_100k_1HT_7_out_of_9.png
+
+Going through my first scalability tests with Agrawal. 
+
+Reasons? 1) It has 9 features and by selecting 7 out of them, there are 36 possible combinations.
+
+The testing set-up will consists of 
+
+32 Trees, 7 features out of 9, 200 instances nmnin, 0.0001 as confidence level.
+
+=================================================================================================
+**Today = Test 1 will be with parallelism of 1, five times and take the mean**
+
+./bin/flink run -d -p 1 -m yarn-cluster -yid application_1614183653371_0147 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 32 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
+
+
+HT 2 Selected Features: 0 1 2 3 6 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 3 Selected Features: 1 2 3 4 5 6 7 
+Hi ConceptDriftDetector.DDM constructor
+HT 5 Selected Features: 0 1 2 3 4 5 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 6 Selected Features: 0 1 2 3 5 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 7 Selected Features: 0 1 2 4 5 6 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 8 Selected Features: 0 2 3 4 5 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 12 Selected Features: 1 2 3 4 5 6 7 
+Hi ConceptDriftDetector.DDM constructor
+HT 13 Selected Features: 1 2 3 4 5 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 14 Selected Features: 0 1 2 3 4 6 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 16 Selected Features: 1 3 4 5 6 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 17 Selected Features: 0 1 2 3 5 6 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 20 Selected Features: 0 1 2 4 5 6 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 21 Selected Features: 0 1 2 4 5 6 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 23 Selected Features: 0 1 2 4 6 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 24 Selected Features: 0 1 2 4 6 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 26 Selected Features: 1 3 4 5 6 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 27 Selected Features: 0 1 3 4 5 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 28 Selected Features: 0 2 4 5 6 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 29 Selected Features: 0 1 2 3 4 5 7 
+Hi ConceptDriftDetector.DDM constructor
+HT 31 Selected Features: 0 1 3 4 5 6 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 32 Selected Features: 0 1 4 5 6 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 4 Selected Features: 0 1 2 4 5 6 7 
+Hi ConceptDriftDetector.DDM constructor
+HT 9 Selected Features: 0 1 3 4 5 6 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 10 Selected Features: 2 3 4 5 6 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 11 Selected Features: 0 1 2 4 5 6 7 
+Hi ConceptDriftDetector.DDM constructor
+HT 15 Selected Features: 0 1 2 4 5 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 19 Selected Features: 2 3 4 5 6 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 25 Selected Features: 0 1 2 3 5 6 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 30 Selected Features: 0 1 2 3 4 5 6 
+Hi ConceptDriftDetector.DDM constructor
+HT 1 Selected Features: 0 1 2 3 5 7 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 22 Selected Features: 0 1 2 4 5 6 8 
+Hi ConceptDriftDetector.DDM constructor
+HT 18 Selected Features: 0 1 2 3 4 5 6 
+Hi ConceptDriftDetector.DDM constructor
+
+
+
+
+
+
+
+**Today = Test 2 will be with parallelism of 2, five times and take the mean**
+
+./bin/flink run -d -p 2 -m yarn-cluster -yid application_1614183653371_0147 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 32 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
+
+**Today = Test 3 will be with parallelism of 4, five times and take the mean**
+
+./bin/flink run -d -p 4 -m yarn-cluster -yid application_1614183653371_0147 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 32 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
+
+**Today = Test 4 will be with parallelism of 6, five times and take the mean**
+
+./bin/flink run -d -p 6 -m yarn-cluster -yid application_1614183653371_0147 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 32 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
+
+**Today = Test 5 will be with parallelism of 8, five times and take the mean**
+
+
+./bin/flink run -d -p 8 -m yarn-cluster -yid application_1614183653371_0147 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 32 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
+
+=================================================================================================
+Test 6 will be with parallelism of 12, five times and take the mean
+Test 7 will be with parallelism of 16, five times and take the mean
+Test 7 will be with parallelism of 20, five times and take the mean
+Test 7 will be with parallelism of 24, five times and take the mean
+Test 7 will be with parallelism of 28, five times and take the mean
+Test 7 will be with parallelism of 32, five times and take the mean
+
+All results will be stored in [Experimental Evaluation](https://docs.google.com/spreadsheets/d/1x4PSFXFCQBgqCdMY_xfALaL9l58V37r0noectH89Hg4/edit?usp=sharing)
+
+Also, I have to see the ML metrics RecordsInPerSecond 
+
+Machine_Learning_Model.numRecordsInPerSecond
+
+
+I am expecting 3.000.000 x 32 x 0.632 = 60.672.000 instances to pass to the ML task from the 96.000.000
