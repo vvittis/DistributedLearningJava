@@ -6,7 +6,7 @@ import java.util.*;
 public class Node implements Serializable {
 
     //implements Serializable
-    private static final long serialVersionUID=2L;
+    private static final long serialVersionUID = 2L;
 
     // Variables node
     public Integer splitAttr;       // splitting attribute
@@ -25,13 +25,15 @@ public class Node implements Serializable {
     public int max_examples_seen;  // the number of examples between checks for growth(n_min)
     public double delta;           // one minus the desired probability of choosing the correct feature at any given node
     public double tie_threshold;   // tie threshold between splitting values of selected features for split
-
+    public int node_id;
+    public int counter;
     // left , >=
     // right , <
 
     // Constructor
 
-    public Node() { }
+    public Node() {
+    }
 
 
     // Getter and Setter
@@ -84,13 +86,21 @@ public class Node implements Serializable {
         return parentNode;
     }
 
-    public int getM_features() { return m_features; }
+    public int getM_features() {
+        return m_features;
+    }
 
-    public int getMax_examples_seen() { return max_examples_seen; }
+    public int getMax_examples_seen() {
+        return max_examples_seen;
+    }
 
-    public double getDelta() { return delta; }
+    public double getDelta() {
+        return delta;
+    }
 
-    public double getTie_threshold() { return tie_threshold; }
+    public double getTie_threshold() {
+        return tie_threshold;
+    }
 
 
     // Methods
@@ -100,7 +110,9 @@ public class Node implements Serializable {
      * @param attribute - For a given Attribute
      * @return - Get the whole list containing the values of this attribute
      */
-    public LinkedList<Double> getAttributeList(Node node, int attribute) { return node.samples.get(attribute); }
+    public LinkedList<Double> getAttributeList(Node node, int attribute) {
+        return node.samples.get(attribute);
+    }
 
     /**
      * @param number_of_attributes <p> Each node has a Samples HashMap and a LabelCounters HashMap
@@ -122,6 +134,21 @@ public class Node implements Serializable {
 
         // Initialize HashMap for LabelCounters
         HashMap<Integer, Integer> labelcounters = this.getLabelCounts();
+        labelcounters.put(0, 0);
+        labelcounters.put(1, 0);
+    }
+
+    public void ResetNode(Node node, int number_of_attributes) {
+
+        // Initialize HashMap for Samples
+        HashMap<Integer, LinkedList<Double>> samples = node.getSamples();
+        for (int i = 0; i < number_of_attributes; i++) {
+            LinkedList<Double> list = new LinkedList<>();
+            samples.put(i, list);
+        }
+
+        // Initialize HashMap for LabelCounters
+        HashMap<Integer, Integer> labelcounters = node.getLabelCounts();
         labelcounters.put(0, 0);
         labelcounters.put(1, 0);
     }
@@ -155,20 +182,23 @@ public class Node implements Serializable {
         HashMap<Integer, Integer> labels_hash_map = node.getLabelCounts();
         int label0 = labels_hash_map.get(0);
         int label1 = labels_hash_map.get(1);
-        if (label0 > label1) { node.label = 0; }
-        else { node.label = 1; }
+        if (label0 > label1) {
+            node.label = 0;
+        } else {
+            node.label = 1;
+        }
     }
 
     /**
      * @param node For a given node
      * @return whether or not a given node is homogeneous or not
      * <p> If both counters of labels are not equal to 0 then the given node is not homogeneous
-     *      &&
-     *     class2   class1
-     *      0   AND 0 = 0 none from each class
-     *      0   AND 1 = 0 only from class2  -> homogeneous
-     *      1   AND 0 = 0 only from class1  -> homogeneous
-     *      1   AND 1 = 1 from both classes -> not homogeneous
+     * &&
+     * class2   class1
+     * 0   AND 0 = 0 none from each class
+     * 0   AND 1 = 0 only from class2  -> homogeneous
+     * 1   AND 0 = 0 only from class1  -> homogeneous
+     * 1   AND 1 = 1 from both classes -> not homogeneous
      *
      * </p>
      */
@@ -178,13 +208,13 @@ public class Node implements Serializable {
     }
 
     /**
-     * @param m_features randomly selected subset of features
+     * @param m_features        randomly selected subset of features
      * @param max_examples_seen the number of examples between checks for growth(n_min)
-     * @param delta one minus the desired probability of choosing the correct feature at any given node
-     * @param tie_threshold tie threshold between splitting values of selected features for split
-     * <p> This function is responsible for Creating the Hoeffding tree.</p>
+     * @param delta             one minus the desired probability of choosing the correct feature at any given node
+     * @param tie_threshold     tie threshold between splitting values of selected features for split
+     *                          <p> This function is responsible for Creating the Hoeffding tree.</p>
      */
-    public void CreateHT(int m_features, int max_examples_seen,double delta,double tie_threshold) {
+    public void CreateHT(int m_features, int max_examples_seen, double delta, double tie_threshold) {
         InitializeHashMapSamplesAndLabelCounts(m_features);
         this.label = 0;
         this.information_gain = null;
@@ -199,16 +229,32 @@ public class Node implements Serializable {
         this.max_examples_seen = max_examples_seen;
         this.m_features = m_features;
         this.tie_threshold = tie_threshold;
+        this.node_id = 0;
+        this.counter = max_examples_seen;
     }
 
     /**
-     * @param node For a given node(root)
+     * @param node   For a given node(root)
      * @param sample An array of values of features which will be use for testing
-     *              <p> Traverse the tree using sample and return the label of node at which it ends </p>
+     *               <p> Traverse the tree using sample and return the label of node at which it ends </p>
      */
     public int TestHT(Node node, String[] sample) {
         Node updatedNode = TraverseTree(node, sample);
         return updatedNode.label;
+    }
+
+    public int SizeHT(Node node) {
+        if (node.leftNode == null || node.rightNode == null) {
+            return node.getNmin();
+        }
+        // Compute the depth of each subtree
+        int left_size = SizeHT(node.leftNode);
+        int right_size = SizeHT(node.rightNode);
+
+        // Use the larger one
+        return left_size + right_size;
+
+
     }
 
     /**
@@ -218,8 +264,9 @@ public class Node implements Serializable {
      * @return "height" of the tree
      */
     public int MaxDepth(Node node) {
-        if (node == null) { return 0; }
-        else {
+        if (node == null) {
+            return 0;
+        } else {
             // Compute the depth of each subtree
             int lDepth = MaxDepth(node.leftNode);
             int rDepth = MaxDepth(node.rightNode);
@@ -233,10 +280,11 @@ public class Node implements Serializable {
     /**
      * @param node This function clears all the Hoeffding Tree. All it needs is the root
      */
-    public void RemoveHT(Node node){
+    public void RemoveHT(Node node) {
 
-        if( node == null ){ return;}
-        else{
+        if (node == null) {
+            return;
+        } else {
             RemoveHT(node.leftNode);
             RemoveHT(node.rightNode);
 
@@ -265,10 +313,13 @@ public class Node implements Serializable {
      */
     public Node FindRoot(Node node) {
 
-        if (node.parentNode == null) { return node; }
-        else {
+        if (node.parentNode == null) {
+            return node;
+        } else {
             Node newNode = node.parentNode;
-            while (newNode.parentNode != null) { newNode = newNode.parentNode; }
+            while (newNode.parentNode != null) {
+                newNode = newNode.parentNode;
+            }
             return newNode;
         }
     }
@@ -279,7 +330,17 @@ public class Node implements Serializable {
      * The splitting condition is:
      * If a have seen max_examples_seen and the given node is homogeneous
      */
-    public boolean NeedForSplit(Node node) { return node.getNmin() >= node.max_examples_seen && CheckHomogeneity(node); }
+    public boolean NeedForSplit(Node node) {
+        boolean modulo = false;
+        if (node.getNmin() > counter) {
+            modulo = true;
+            counter += node.max_examples_seen;
+        }
+
+        return modulo && CheckHomogeneity(node);
+        // return node.getNmin() >= node.max_examples_seen && CheckHomogeneity(node);
+
+    }
     // Stop splitting based on setOfAttr or entropy of node(=0)
 
 
@@ -293,15 +354,56 @@ public class Node implements Serializable {
      *               3. Inserts the new sample to the node returned from the traversal of the tree.
      */
     public void UpdateHT(Node node, String[] sample) {
-
         Node updatedNode = TraverseTree(node, sample);
-
         if (NeedForSplit(updatedNode)) {
-            AttemptSplit(updatedNode);
-            updatedNode = TraverseTree(node, sample);
+            AttemptSplit(updatedNode, sample);
+        } else {
             InsertNewSample(updatedNode, sample);
         }
-        else { InsertNewSample(updatedNode, sample); }
+    }
+
+    /**
+     * @param node For a given node
+     *             <p> It attempt to split the node </p>
+     *             <p> First, find the best attributes to split the node </p>
+     *             <p> Second,if the best attributes satisfy the condition(based on epsilon,tie_threshold) then became the splitting of node </p>
+     */
+    public void AttemptSplit(Node node, String[] sample) {
+        double[][] G = FindTheBestAttribute(node); // informationGain,splitAttr,splitValue-row
+        double G1 = G[0][0]; // highest information gain
+        double G2 = G[0][1]; // second-highest information gain
+
+        // Calculate epsilon
+        double epsilon = CalculateHoeffdingBound(node);
+
+        // Attempt split ///
+        if ((((G1 - G2) > epsilon) || (G1 - G2) < node.tie_threshold)) {
+            double[] values = new double[3];
+            for (int i = 0; i < 3; i++) {
+                values[i] = G[i][0];
+            }
+            SplitFunction(node, values);
+            if (Double.parseDouble(sample[node.splitAttr]) <= node.splitValue) {
+                InsertNewSample(node.leftNode, sample);
+            } else {
+                InsertNewSample(node.rightNode, sample);
+            }
+            return;
+        } else {
+            node.label = -1;
+            node.labelCounts.clear();
+            node.samples.clear();
+            node.information_gain = 0.0;
+            node.nmin = 0;
+            node.counter = node.max_examples_seen;
+            node.label_List.clear();
+            ResetNode(node, m_features);
+            InsertNewSample(node, sample);
+        }
+
+        // Reset information gain of node if not done the split
+        node.information_gain = 0.0;
+
     }
 
     /**
@@ -316,40 +418,15 @@ public class Node implements Serializable {
     public void InsertNewSample(Node node, String[] sample) {
         for (int i = 0; i < sample.length - 1; i++) {
             LinkedList<Double> list = getAttributeList(node, i);
-            list.add(Double.parseDouble(sample[i]));
+            String str = String.format("% .1f", Double.parseDouble(sample[i]));
+            list.add(Double.parseDouble(str));
+
         }
 
         int label = Integer.parseInt(sample[sample.length - 1]);
         node.label_List.add(label);
         UpdateLabelCounters(node, label);
         UpdateNMin(node);
-    }
-
-    /**
-     * @param node For a given node
-     *             <p> It attempt to split the node </p>
-     *             <p> First, find the best attributes to split the node </p>
-     *             <p> Second,if the best attributes satisfy the condition(based on epsilon,tie_threshold) then became the splitting of node </p>
-     */
-    public void AttemptSplit(Node node) {
-        double[][] G = FindTheBestAttribute(node); // informationGain,splitAttr,splitValue-row
-        double G1 = G[0][0]; // highest information gain
-        double G2 = G[0][1]; // second-highest information gain
-
-        // Calculate epsilon
-        double epsilon = CalculateHoeffdingBound(node);
-
-        // Attempt split ///
-        if ((((G1 - G2) > epsilon) || (G1 - G2) < node.tie_threshold) ) {
-            double[] values = new double[3];
-            for (int i = 0; i < 3; i++) { values[i] = G[i][0]; }
-            SplitFunction(node, values);
-            return;
-        }
-
-        // Reset information gain of node if not done the split
-        node.information_gain = 0.0;
-
     }
 
     /**
@@ -365,7 +442,7 @@ public class Node implements Serializable {
         double ln = Math.log(1.0 / node.delta);
         double numerator = Math.pow(R, 2) * ln;
         double denominator = 2 * n;
-        double fraction = numerator /denominator;
+        double fraction = numerator / denominator;
         return Math.sqrt(fraction);
     }
 
@@ -380,7 +457,9 @@ public class Node implements Serializable {
 
             LinkedList<Double> list = getAttributeList(node, i);
             double[] val = new double[list.size()];
-            for (int j = 0; j < list.size(); j++) { val[j] = list.get(j); }
+            for (int j = 0; j < list.size(); j++) {
+                val[j] = list.get(j);
+            }
 
             // Calculate splitting value
             double[] splitValues = Utilities.Quartiles(val);
@@ -399,8 +478,7 @@ public class Node implements Serializable {
                     multiples[1][1] = i + 1;
                     multiples[2][1] = splitValues[1];
                     // ... else to the opposite
-                }
-                else {
+                } else {
                     multiples[0][1] = GXa;
                     multiples[1][1] = i;
                     multiples[2][1] = splitValues[0];
@@ -409,8 +487,7 @@ public class Node implements Serializable {
                     multiples[2][0] = splitValues[1];
                 }
                 // In case the current attribute is not the first (0) attribute
-            }
-            else {
+            } else {
                 // Get the G of the first quartile...
                 double tempG = InformationGain(node, i, splitValues[0]);
                 // If the tempG is greater from the already best G, put the tempG in the 0 position and the previous G
@@ -442,8 +519,7 @@ public class Node implements Serializable {
                     multiples[0][0] = tempG;
                     multiples[1][0] = i;
                     multiples[2][0] = splitValues[j];
-                }
-                else if (tempG > multiples[0][1]) {
+                } else if (tempG > multiples[0][1]) {
                     multiples[0][1] = tempG;
                     multiples[1][1] = i;
                     multiples[2][1] = splitValues[j];
@@ -454,25 +530,28 @@ public class Node implements Serializable {
     }
 
     /**
-     * @param node For a given node
+     * @param node   For a given node
      * @param sample An array of values of features which will be use for traverse the tree
      * @return The label of node at which it ends
      */
     public Node TraverseTree(Node node, String[] sample) {
 
-        if (node.leftNode == null && node.rightNode == null) { return node; }
-        else {
+        if (node.leftNode == null && node.rightNode == null) {
+            return node;
+        } else {
             //Left child node
-            if ( Double.parseDouble(sample[node.splitAttr]) <= node.splitValue ) {
+            if (Double.parseDouble(sample[node.splitAttr]) <= node.splitValue) {
                 return TraverseTree(node.leftNode, sample);
             }
             //Right child node
-            else { return TraverseTree(node.rightNode, sample); }
+            else {
+                return TraverseTree(node.rightNode, sample);
+            }
         }
     }
 
     /**
-     * @param node For a given node
+     * @param node   For a given node
      * @param values Correspond to informationGain,splitAttribute,splitValue for node
      *               <p> It is responsible to split the node and create the left and right child-node </p>
      */
@@ -487,7 +566,7 @@ public class Node implements Serializable {
         child2.parentNode = node;
         node.leftNode = child1;
         node.rightNode = child2;
-
+        node.nmin = 0;
         // Initialize informationGain,splitAttribute,splitValue for node(parent-node)
         node.information_gain = values[0];
         node.splitAttr = (int) values[1];
@@ -500,7 +579,8 @@ public class Node implements Serializable {
         child2.information_gain = 0.0;
         child1.label = -1;
         child2.label = -1;
-
+        child1.node_id = node.node_id + 1023;
+        child2.node_id = node.node_id + 412;
         // Initialize set of attributes for children nodes
         child1.setOfAttr = node.setOfAttr - 1;
         child2.setOfAttr = child1.setOfAttr;
@@ -528,10 +608,10 @@ public class Node implements Serializable {
     }
 
     /**
-     * @param node For a given node
-     * @param splitAttr Splitting attribute
+     * @param node       For a given node
+     * @param splitAttr  Splitting attribute
      * @param splitValue Splitting value for splitAttr
-     *                    <p> Calculate the Information Gain based on on splitAttr and splitValue </p>
+     *                   <p> Calculate the Information Gain based on on splitAttr and splitValue </p>
      * @return Information Gain of node based on splitAttr and splitValue
      */
     public double InformationGain(Node node, int splitAttr, double splitValue) {
@@ -544,20 +624,28 @@ public class Node implements Serializable {
         for (int i = 0; i < node.samples.get(splitAttr).size(); i++) {
 
             if (Double.compare(node.getSamples().get(splitAttr).get(i), splitValue) >= 0) {
-                if (node.label_List.get(i) == 0) { labelCount0Up++; }
-                else { labelCount1Up++; }
-            }
-            else{
-                if (node.label_List.get(i) == 0) { labelCount0Low++; }
-                else { labelCount1Low++; }
+                if (node.label_List.get(i) == 0) {
+                    labelCount0Up++;
+                } else {
+                    labelCount1Up++;
+                }
+            } else {
+                if (node.label_List.get(i) == 0) {
+                    labelCount0Low++;
+                } else {
+                    labelCount1Low++;
+                }
             }
         }
 
         // Calculate entropy node
         double log0 = Math.log((double) node.labelCounts.get(0) / node.nmin) / Math.log(2);
         double log1 = Math.log((double) node.labelCounts.get(1) / node.nmin) / Math.log(2);
-        if (node.labelCounts.get(0) == 0) { log0 = 0; }
-        else if (node.labelCounts.get(1) == 0) { log1 = 0; }
+        if (node.labelCounts.get(0) == 0) {
+            log0 = 0;
+        } else if (node.labelCounts.get(1) == 0) {
+            log1 = 0;
+        }
         double entropyNode = (-1) * (((double) node.labelCounts.get(0) / node.nmin) * log0) + (-1) * (((double) node.labelCounts.get(1) / node.nmin) * log1);
 
         // Update information_gain node
@@ -569,22 +657,34 @@ public class Node implements Serializable {
         int totalCountLeftNode = labelCount0Up + labelCount1Up;
         log0 = Math.log((double) labelCount0Up / totalCountLeftNode) / Math.log(2);
         log1 = Math.log((double) labelCount1Up / totalCountLeftNode) / Math.log(2);
-        if (labelCount0Up == 0) { log0 = 0; }
-        else if (labelCount1Up == 0) { log1 = 0; }
+        if (labelCount0Up == 0) {
+            log0 = 0;
+        } else if (labelCount1Up == 0) {
+            log1 = 0;
+        }
 
-        if (totalCountLeftNode == 0) { entropyLeftNode = 0; }
-        else { entropyLeftNode = (-1) * (((double) labelCount0Up / totalCountLeftNode) * log0) + (-1) * (((double) labelCount1Up / totalCountLeftNode) * log1); }
+        if (totalCountLeftNode == 0) {
+            entropyLeftNode = 0;
+        } else {
+            entropyLeftNode = (-1) * (((double) labelCount0Up / totalCountLeftNode) * log0) + (-1) * (((double) labelCount1Up / totalCountLeftNode) * log1);
+        }
 
         // Right HoeffdingTree.Node
         double entropyRightNode;
         int totalCountRightNode = labelCount0Low + labelCount1Low;
         log0 = Math.log((double) labelCount0Low / totalCountRightNode) / Math.log(2);
         log1 = Math.log((double) labelCount1Low / totalCountRightNode) / Math.log(2);
-        if (labelCount0Low == 0) { log0 = 0; }
-        else if (labelCount1Low == 0) { log1 = 0; }
+        if (labelCount0Low == 0) {
+            log0 = 0;
+        } else if (labelCount1Low == 0) {
+            log1 = 0;
+        }
 
-        if (totalCountRightNode == 0) { entropyRightNode = 0; }
-        else { entropyRightNode = (-1) * (((double) labelCount0Low / totalCountRightNode) * log0) + (-1) * (((double) labelCount1Low / totalCountRightNode) * log1); }
+        if (totalCountRightNode == 0) {
+            entropyRightNode = 0;
+        } else {
+            entropyRightNode = (-1) * (((double) labelCount0Low / totalCountRightNode) * log0) + (-1) * (((double) labelCount1Low / totalCountRightNode) * log1);
+        }
 
         //Calculate weighted average entropy of splitAttr
         double weightedEntropy = (((double) totalCountLeftNode / node.nmin) * entropyLeftNode) + (((double) totalCountRightNode / node.nmin) * entropyRightNode);

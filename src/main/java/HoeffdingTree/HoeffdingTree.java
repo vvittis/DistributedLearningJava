@@ -1,5 +1,8 @@
 package HoeffdingTree;
 
+
+import org.apache.kafka.common.metrics.stats.Max;
+
 import java.io.Serializable;
 
 public class HoeffdingTree implements Serializable {
@@ -49,6 +52,13 @@ public class HoeffdingTree implements Serializable {
         String[] selectedInput = this.select_m_features(input);
         node.UpdateHT(node, selectedInput);
     }
+    public int SizeHT(Node node){
+        return node.SizeHT(node);
+    }
+    public int MaxDepth(Node node){
+        return node.MaxDepth(node);
+    }
+
 
     /**
      * @param node     For a given node

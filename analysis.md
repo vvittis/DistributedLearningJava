@@ -60,7 +60,7 @@ HT21 => flink@clu02
 HT22 => flink@clu15
 
 
-20/7
+# 20/7
 
 application_1614183653371_0142
 
@@ -95,7 +95,7 @@ Therefore, I changed the code of my pycharm script and I added two kafkaconnecto
 
 I ran DistributedLearningJava without a drift detection method (by assigning 0) writing to kafka topic and then I reran my project with (option 1  aka DDM) writing it to a different kafka topic. The script reads from both of them and merges the plots into one.
 
-21/7
+# 21/7
 
 
 'application_1614183653371_0143'.
@@ -129,7 +129,7 @@ already a kafka topic vvittis_SineTopic
 
 0.Machine_Learning_Model.numRecordsInPerSecond
 
-22/7
+# 22/7
 
 
 
@@ -171,7 +171,7 @@ Agrawal Dataset
 
 ./bin/flink run -d -p 1 -m yarn-cluster -yid application_1614183653371_0143 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 32 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
 
-23/7 
+# 23/7 
 
 Make sure that the project is in a good shape
 
@@ -281,78 +281,7 @@ The testing set-up will consists of
 =================================================================================================
 **Today = Test 1 will be with parallelism of 1, five times and take the mean**
 
-./bin/flink run -d -p 1 -m yarn-cluster -yid application_1614183653371_0147 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 32 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
-
-
-HT 2 Selected Features: 0 1 2 3 6 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 3 Selected Features: 1 2 3 4 5 6 7 
-Hi ConceptDriftDetector.DDM constructor
-HT 5 Selected Features: 0 1 2 3 4 5 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 6 Selected Features: 0 1 2 3 5 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 7 Selected Features: 0 1 2 4 5 6 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 8 Selected Features: 0 2 3 4 5 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 12 Selected Features: 1 2 3 4 5 6 7 
-Hi ConceptDriftDetector.DDM constructor
-HT 13 Selected Features: 1 2 3 4 5 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 14 Selected Features: 0 1 2 3 4 6 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 16 Selected Features: 1 3 4 5 6 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 17 Selected Features: 0 1 2 3 5 6 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 20 Selected Features: 0 1 2 4 5 6 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 21 Selected Features: 0 1 2 4 5 6 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 23 Selected Features: 0 1 2 4 6 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 24 Selected Features: 0 1 2 4 6 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 26 Selected Features: 1 3 4 5 6 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 27 Selected Features: 0 1 3 4 5 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 28 Selected Features: 0 2 4 5 6 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 29 Selected Features: 0 1 2 3 4 5 7 
-Hi ConceptDriftDetector.DDM constructor
-HT 31 Selected Features: 0 1 3 4 5 6 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 32 Selected Features: 0 1 4 5 6 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 4 Selected Features: 0 1 2 4 5 6 7 
-Hi ConceptDriftDetector.DDM constructor
-HT 9 Selected Features: 0 1 3 4 5 6 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 10 Selected Features: 2 3 4 5 6 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 11 Selected Features: 0 1 2 4 5 6 7 
-Hi ConceptDriftDetector.DDM constructor
-HT 15 Selected Features: 0 1 2 4 5 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 19 Selected Features: 2 3 4 5 6 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 25 Selected Features: 0 1 2 3 5 6 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 30 Selected Features: 0 1 2 3 4 5 6 
-Hi ConceptDriftDetector.DDM constructor
-HT 1 Selected Features: 0 1 2 3 5 7 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 22 Selected Features: 0 1 2 4 5 6 8 
-Hi ConceptDriftDetector.DDM constructor
-HT 18 Selected Features: 0 1 2 3 4 5 6 
-Hi ConceptDriftDetector.DDM constructor
-
-
-
-
-
+./bin/flink run -d -p 1 -m yarn-cluster -yid application_1614183653371_0154 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 32 --age_of_maturity 10000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
 
 
 **Today = Test 2 will be with parallelism of 2, five times and take the mean**
@@ -388,3 +317,114 @@ Machine_Learning_Model.numRecordsInPerSecond
 
 
 I am expecting 3.000.000 x 32 x 0.632 = 60.672.000 instances to pass to the ML task from the 96.000.000
+
+
+
+# 29/07
+
+http://clu12.softnet.tuc.gr:41634
+
+application_1614183653371_0148
+
+
+
+
+
+I found why the GC throwed an Exception
+
+
+I changed the following code
+
+From this: return node.getNmin() >= node.max_examples_seen && CheckHomogeneity(node); }
+
+To this:   return node.getNmin() % node.max_examples_seen == 0 && CheckHomogeneity(node);}
+        
+Now I am testing this change with only one HT in order to test how many times the NeedforSplit is satisfied.
+
+Keep in mind that we have a balanced stream so this number has to be somewhat close to the expected. The theoretical number is 3.000.000/200 = 15.000 checks. Let's see...
+
+
+./kafka-topics.sh --create --zookeeper clu02.softnet.tuc.gr:6667,clu03.softnet.tuc.gr:6667,clu04.softnet.tuc.gr:6667,clu06.softnet.tuc.gr:6667 --replication-factor 1 --partitions 4 --topic vvittis_Agrawal_3M
+
+
+
+./bin/flink run -d -p 1 -m yarn-cluster -yid application_1614183653371_0150 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 1 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
+
+
+# 30/07
+
+http://clu05.softnet.tuc.gr:33687
+
+'application_1614183653371_0151'.
+
+
+Modulo as an operator is bottlenecking 
+
+By adding this operation the system is executed 5 times more in time.
+
+Testing an alternative way to see if is gives better results. => https://www.chrisnewland.com/high-performance-modulo-operation-317
+
+If this does not work, I will do a buggy way to fix it.
+
+./bin/flink run -d -p 1 -m yarn-cluster -yid application_1614183653371_0151 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 1 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
+
+
+# 31/07
+
+http://clu16.softnet.tuc.gr:60641
+
+'application_1614183653371_0152'.
+
+
+./bin/flink run -d -p 1 -m yarn-cluster -yid application_1614183653371_0152 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 1 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
+
+
+Run again the test with 32 Hoeffding Trees and 1 parallelism but this time you are doing the checks every 256 instances__________ **YES** IF OK MOVE ON
+|
+|
+|
+**NO**
+IF FAILS then you have to decide ______________ **OPTION 1:** Gaussian Approximation ______________________________ **EITHER WAY** you have to add some memory constraints to the development of the tree. If the tree has a weight greater that 0.6 then does not need to grow any more
+|                                                                                                                  /               else it needs more instances. Each HT will have two phases the Active and Inactive.
+|                                                                                                                 /
+|                                                                                                                /
+|                                                                                                               /
+|                                                                                                              /
+**OPTION 2:** If there is a need for split but the attempt fails then delete all 256 instances________________/
+
+
+
+
+http://clu10.softnet.tuc.gr:42943
+
+'application_1614183653371_0155'.
+
+
+./bin/flink run -d -p 8 -m yarn-cluster -yid application_1614183653371_0155 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 32 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
+
+
+I did TWO Things. The first one is two remove the second unessecary Traverse. and the second one is that after 
+
+
+./kafka-topics.sh --describe --zookeeper clu01.softnet.tuc.gr:2182 --topic vvittis_Agrawal_3m1 
+
+
+./kafka-topics.sh --create --zookeeper clu01.softnet.tuc.gr:2182 --replication-factor 1 --partitions 8 --topic vvittis_Agrawal_3m1
+
+
+http://clu19.softnet.tuc.gr:38834
+
+
+'application_1614183653371_0156'.
+
+
+./bin/flink run -d -p 8 -m yarn-cluster -yid application_1614183653371_0156 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 32 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
+
+
+
+'application_1614183653371_0157'.
+
+
+http://clu12.softnet.tuc.gr:42840
+
+./bin/flink run -d -p 32 -m yarn-cluster -yid application_1614183653371_0157 /home/vvittis/DistributedLearningJava/target/DistributedLearningJava-1.1-SNAPSHOT.jar --number_of_HT 32 --age_of_maturity 1000 --combination_function 3 --weighted_voting_parameter 1 --drift_detection_method_id 1
