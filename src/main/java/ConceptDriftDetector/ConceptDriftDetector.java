@@ -10,15 +10,10 @@ public interface ConceptDriftDetector extends Serializable {
 
 
 
+
     void FindConceptDrift(double error_rate);
 
     int getCurrentDriftStatus();
 
-    int getSignal();
-
-    void updateCurrentDriftStatus();
-
-
-    void ResetConceptDrift();
 
 }

@@ -1,14 +1,14 @@
 package HoeffdingTree;
 
 
-import org.apache.kafka.common.metrics.stats.Max;
+import Utilities.Utilities;
 
 import java.io.Serializable;
 
 public class HoeffdingTree implements Serializable {
 
     //implements Serializable
-    private static final long serialVersionUID = 42L;
+    public static final long serialVersionUID = 42L;
 
     public double instances_seen;
     public double correctly_classified;
@@ -22,6 +22,7 @@ public class HoeffdingTree implements Serializable {
     public HoeffdingTree() {
     }
 
+
     /**
      * @param m_features              random subset of features
      * @param Max                     range aka how many features I have to select from input's feature
@@ -32,8 +33,9 @@ public class HoeffdingTree implements Serializable {
      *                                <p> Create the Hoeffding tree for given parameters </p>
      */
 
-    public void CreateHoeffdingTree(int m_features, int Max, int max_examples_seen, double delta, double tie_threshold, int combination_function_id, int hoeffding_tree_id, int background_tree_indicator) {
-        root.CreateHT(m_features, max_examples_seen, delta, tie_threshold);
+    public void NEW_CreateHoeffdingTree
+            (int m_features, int Max, int max_examples_seen, double delta, double tie_threshold, int combination_function_id, int hoeffding_tree_id, int background_tree_indicator) {
+        root.NEW_CreateHT(m_features, max_examples_seen, delta, tie_threshold);
         instances_seen = 0.0;
         correctly_classified = 0.0;
         weight = 0.0;
@@ -48,15 +50,13 @@ public class HoeffdingTree implements Serializable {
      * @param input An array of values of attributes
      *              <p> It is responsible to update the tree </p>
      */
-    public void UpdateHoeffdingTree(Node node, String[] input) {
+    public void UpdateHoeffdingTree(Node node, String[] input, int weight) {
         String[] selectedInput = this.select_m_features(input);
-        node.UpdateHT(node, selectedInput);
+        node.UpdateHT(node, selectedInput, weight);
     }
-    public int SizeHT(Node node){
+
+    public int SizeHT(Node node) {
         return node.SizeHT(node);
-    }
-    public int MaxDepth(Node node){
-        return node.MaxDepth(node);
     }
 
 
@@ -138,7 +138,7 @@ public class HoeffdingTree implements Serializable {
      */
     public void initialize_m_features(int m, int Max, int htid) {
         this.m_features = Utilities.ReservoirSampling(m, Max);
-//        this.m_features = HoeffdingTree.Utilities.SendAllPossibleCombinations(htid);
+//        this.m_features = Utilities.Utilities.SendAllPossibleCombinations(htid);
     }
 
     /**

@@ -1,23 +1,45 @@
 package HoeffdingTree;
 
+import Utilities.Utilities;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
+
+import org.apache.commons.math3.distribution.*;
 
 public class Node implements Serializable {
 
     //implements Serializable
-    private static final long serialVersionUID = 2L;
+    public static final long serialVersionUID = 2L;
 
     // Variables node
     public Integer splitAttr;       // splitting attribute
     public Double splitValue;       // splitting value as returned by calculate_information_gain
     public Integer label;           // the label of the node
     HashMap<Integer, Integer> labelCounts = new HashMap<>(); // the counter of each label
+    /*
+     * ||     index 0     ||     index 1     ||
+     * || class 1 counter || class 2 counter ||
+     * */
     public Integer nmin;            // Keep tracking the number of samples seen
+    public Integer nmin_last_check; // Number of instances from last check
     public Double information_gain; // the information gain corresponding to the best attribute and the best value
     public Integer setOfAttr;       // set of features
-    public HashMap<Integer, LinkedList<Double>> samples = new HashMap<>(); // number of values for each column
-    public ArrayList<Integer> label_List = new ArrayList<>(); // list of labels corresponding to samples of node
+    public ArrayList<HashMap<Integer, ArrayList<Double>>> statistics = new ArrayList<>(); // number of values for each column
+
+    /*
+     *  ||          feature 1        || ... ||      feature N            ||     <- ArrayList <
+     *  || ------------------------------------------------------------- ||
+     *  ||    class1   |  class2     || ... ||    class1   |  class2     ||     <- HashMap    < Integer ,
+     *  ||    ------      ------     || ... ||    ------      ------     ||
+     *  || weightSum   | weightSum   || ... || weightSum   | weightSum   ||     <- ArrayList < Double >>>
+     *  || mean        | mean        || ... || mean        | mean        ||
+     *  || varianceSum | varianceSum || ... || varianceSum | varianceSum ||
+     * */
+
     Node leftNode;                 // leftNode
     Node rightNode;                // rightNode
     Node parentNode;               // parentNode
@@ -25,21 +47,22 @@ public class Node implements Serializable {
     public int max_examples_seen;  // the number of examples between checks for growth(n_min)
     public double delta;           // one minus the desired probability of choosing the correct feature at any given node
     public double tie_threshold;   // tie threshold between splitting values of selected features for split
-    public int node_id;
-    public int counter;
-    // left , >=
-    // right , <
+    // left , <
+    // right , =>
 
     // Constructor
 
     public Node() {
     }
 
-
+    public ArrayList<HashMap<Integer, ArrayList<Double>>> getStatistics() {
+        return statistics;
+    }
     // Getter and Setter
 
-    public HashMap<Integer, LinkedList<Double>> getSamples() {
-        return samples;
+
+    public ArrayList<Double> getStatistics(int index, int class_label) {
+        return statistics.get(index).get(class_label);
     }
 
     public HashMap<Integer, Integer> getLabelCounts() {
@@ -50,102 +73,16 @@ public class Node implements Serializable {
         return this.nmin;
     }
 
-    public int getClassLabel(Node node) {
-        return node.label;
-    }
 
-    public Integer getSplitAttr() {
-        return splitAttr;
-    }
-
-    public Double getSplitValue() {
-        return splitValue;
-    }
-
-    public Double getInformation_gain() {
-        return information_gain;
-    }
-
-    public Integer getSetOfAttr() {
-        return setOfAttr;
-    }
-
-    public ArrayList<Integer> getLabel_List() {
-        return label_List;
-    }
-
-    public Node getLeftNode() {
-        return leftNode;
-    }
-
-    public Node getRightNode() {
-        return rightNode;
-    }
-
-    public Node getParentNode() {
-        return parentNode;
-    }
-
-    public int getM_features() {
-        return m_features;
-    }
-
-    public int getMax_examples_seen() {
-        return max_examples_seen;
-    }
-
-    public double getDelta() {
-        return delta;
-    }
-
-    public double getTie_threshold() {
-        return tie_threshold;
-    }
-
-
-    // Methods
-
-    /**
-     * @param node      - For a given HoeffdingTree.Node
-     * @param attribute - For a given Attribute
-     * @return - Get the whole list containing the values of this attribute
-     */
-    public LinkedList<Double> getAttributeList(Node node, int attribute) {
-        return node.samples.get(attribute);
-    }
-
-    /**
-     * @param number_of_attributes <p> Each node has a Samples HashMap and a LabelCounters HashMap
-     *                             in order to add new stuff to them, we have to initialize them
-     *                             For Samples HashMap:
-     *                             We know apriori the number of attributes that we have, so we create as many lists as the number of attributes
-     *                             For LabelCounters HashMap:
-     *                             We know that we have a binary problem (0:Non Fraud, 1:Fraud) so we need only 2 <0,?> and <1,?> in order to keep track the
-     *                             label counts
-     */
-    public void InitializeHashMapSamplesAndLabelCounts(int number_of_attributes) {
-
-        // Initialize HashMap for Samples
-        HashMap<Integer, LinkedList<Double>> samples = this.getSamples();
-        for (int i = 0; i < number_of_attributes; i++) {
-            LinkedList<Double> list = new LinkedList<>();
-            samples.put(i, list);
-        }
-
-        // Initialize HashMap for LabelCounters
-        HashMap<Integer, Integer> labelcounters = this.getLabelCounts();
-        labelcounters.put(0, 0);
-        labelcounters.put(1, 0);
-    }
 
     public void ResetNode(Node node, int number_of_attributes) {
 
         // Initialize HashMap for Samples
-        HashMap<Integer, LinkedList<Double>> samples = node.getSamples();
-        for (int i = 0; i < number_of_attributes; i++) {
-            LinkedList<Double> list = new LinkedList<>();
-            samples.put(i, list);
-        }
+//        HashMap<Integer, LinkedList<Double>> samples = node.getSamples();
+//        for (int i = 0; i < number_of_attributes; i++) {
+//            LinkedList<Double> list = new LinkedList<>();
+//            samples.put(i, list);
+//        }
 
         // Initialize HashMap for LabelCounters
         HashMap<Integer, Integer> labelcounters = node.getLabelCounts();
@@ -189,23 +126,7 @@ public class Node implements Serializable {
         }
     }
 
-    /**
-     * @param node For a given node
-     * @return whether or not a given node is homogeneous or not
-     * <p> If both counters of labels are not equal to 0 then the given node is not homogeneous
-     * &&
-     * class2   class1
-     * 0   AND 0 = 0 none from each class
-     * 0   AND 1 = 0 only from class2  -> homogeneous
-     * 1   AND 0 = 0 only from class1  -> homogeneous
-     * 1   AND 1 = 1 from both classes -> not homogeneous
-     *
-     * </p>
-     */
-    public boolean CheckHomogeneity(Node node) {
-        HashMap<Integer, Integer> labels_hash_map = node.getLabelCounts();
-        return labels_hash_map.get(0) != 0 && labels_hash_map.get(1) != 0;
-    }
+
 
     /**
      * @param m_features        randomly selected subset of features
@@ -214,11 +135,13 @@ public class Node implements Serializable {
      * @param tie_threshold     tie threshold between splitting values of selected features for split
      *                          <p> This function is responsible for Creating the Hoeffding tree.</p>
      */
-    public void CreateHT(int m_features, int max_examples_seen, double delta, double tie_threshold) {
-        InitializeHashMapSamplesAndLabelCounts(m_features);
+    public void NEW_CreateHT
+    (int m_features, int max_examples_seen, double delta, double tie_threshold) {
+        NEW_InitializeStatisticsAndLabelCounts(m_features);
         this.label = 0;
         this.information_gain = null;
         this.nmin = 0;
+        this.nmin_last_check = 0;
         this.leftNode = null;
         this.rightNode = null;
         this.parentNode = null;
@@ -229,8 +152,50 @@ public class Node implements Serializable {
         this.max_examples_seen = max_examples_seen;
         this.m_features = m_features;
         this.tie_threshold = tie_threshold;
-        this.node_id = 0;
-        this.counter = max_examples_seen;
+    }
+
+    /**
+     * @param number_of_attributes <p> Each node has a Samples HashMap and a LabelCounters HashMap
+     *                             in order to add new stuff to them, we have to initialize them
+     *                             For Samples HashMap:
+     *                             We know apriori the number of attributes that we have, so we create as many lists as the number of attributes
+     *                             For LabelCounters HashMap:
+     *                             We know that we have a binary problem (0:Non Fraud, 1:Fraud) so we need only 2 <0,?> and <1,?> in order to keep track the
+     *                             label counts
+     */
+
+    public void NEW_InitializeStatisticsAndLabelCounts(int number_of_attributes) {
+
+        // Initialize HashMap for Samples
+        ArrayList<HashMap<Integer, ArrayList<Double>>> statistics = this.getStatistics();
+        for (int i = 0; i < number_of_attributes; i++) {
+
+            ArrayList<Double> statistics_class1 = new ArrayList<Double>();
+
+            statistics_class1.add(0, 0.0); // weightSum
+            statistics_class1.add(1, 0.0); // mean
+            statistics_class1.add(2, 0.0); // varianceSum
+            statistics_class1.add(3, Double.MAX_VALUE); // min
+            statistics_class1.add(4, 0.0); // max
+
+            ArrayList<Double> statistics_class2 = new ArrayList<Double>();
+
+            statistics_class2.add(0, 0.0); // weightSum
+            statistics_class2.add(1, 0.0); // mean
+            statistics_class2.add(2, 0.0); // varianceSum
+            statistics_class2.add(3, Double.MAX_VALUE); // min
+            statistics_class2.add(4, 0.0); // max
+
+            HashMap<Integer, ArrayList<Double>> feature_hashmap = new HashMap<>();
+            feature_hashmap.put(0, statistics_class1); // Statistics for class 0
+            feature_hashmap.put(1, statistics_class2); // Statistics for class 1
+            statistics.add(i, feature_hashmap);
+        }
+
+        // Initialize HashMap for LabelCounters
+        HashMap<Integer, Integer> labelcounters = this.getLabelCounts();
+        labelcounters.put(0, 0);
+        labelcounters.put(1, 0);
     }
 
     /**
@@ -297,8 +262,6 @@ public class Node implements Serializable {
             node.splitAttr = null;
             node.splitValue = null;
             node.setOfAttr = null;
-            node.label_List.clear();
-            node.samples.clear();
             node.m_features = 0;
             node.max_examples_seen = 0;
             node.delta = 0.0;
@@ -324,42 +287,121 @@ public class Node implements Serializable {
         }
     }
 
-    /**
-     * @param node For a given HoeffdingTree.Node
-     * @return Whether or not a node needs a split
-     * The splitting condition is:
-     * If a have seen max_examples_seen and the given node is homogeneous
-     */
-    public boolean NeedForSplit(Node node) {
-        boolean modulo = false;
-        if (node.getNmin() > counter) {
-            modulo = true;
-            counter += node.max_examples_seen;
-        }
-
-        return modulo && CheckHomogeneity(node);
-        // return node.getNmin() >= node.max_examples_seen && CheckHomogeneity(node);
-
-    }
     // Stop splitting based on setOfAttr or entropy of node(=0)
 
 
     /**
+     * <strong>Jobs: It is responsible to update the tree.</strong>
+     * <ol>
+     *     <li> Checks whether or not a split is needed for that given node</li>
+     *     <li> If not then traverse the tree and finds the node where the given example has to be inserted</li>
+     *     <li> Inserts the new sample to the node returned from the traversal of the tree.</li>
+     * </ol>
+     *
      * @param node   For a given node
      * @param sample An array of values of attributes aka sample
-     *               <p> It is responsible to update the tree.
-     *               Jobs:
-     *               1. Checks whether or not a split is needed for that given node
-     *               2. If not then traverse the tree and finds the node where the given example has to be inserted
-     *               3. Inserts the new sample to the node returned from the traversal of the tree.
      */
-    public void UpdateHT(Node node, String[] sample) {
+    public void UpdateHT(Node node, String[] sample, int weight) {
         Node updatedNode = TraverseTree(node, sample);
         if (NeedForSplit(updatedNode)) {
             AttemptSplit(updatedNode, sample);
         } else {
-            InsertNewSample(updatedNode, sample);
+            NEW_InsertNewSample(updatedNode, sample, weight);
         }
+    }
+
+    /**
+     * <strong>The splitting condition is:</strong>
+     * <br>
+     * If a have seen more than max_examples_seen and the given node is homogeneous
+     *
+     * @param node For a given HoeffdingTree.Node
+     * @return Whether or not a node needs a split
+     */
+    public boolean NeedForSplit(Node node) {
+        if (node.getNmin() - node.nmin_last_check >= node.max_examples_seen) {
+            node.nmin_last_check = node.getNmin();
+            return CheckHomogeneity(node);
+        }
+        return false;
+        // return node.getNmin() >= node.max_examples_seen && CheckHomogeneity(node);
+    }
+
+    /**
+     * <strong>If both counters of labels are not equal to 0 then the given node is not homogeneous</strong>
+     * <ul>
+     *     <li>(0 AND 0) = 0 none from each class</li>
+     *     <li>(0 AND 1) = 0 only from class2  -> homogeneous</li>
+     *     <li>(1 AND 0) = 0 only from class1  -> homogeneous</li>
+     *     <li>(1 AND 1) = 1 from both classes -> not homogeneous</li>
+     * </ul>
+     *
+     * @param node For a given node
+     * @return whether or not a given node is homogeneous or not
+     */
+    public boolean CheckHomogeneity(Node node) {
+        HashMap<Integer, Integer> labels_hash_map = node.getLabelCounts();
+        return labels_hash_map.get(0) != 0 && labels_hash_map.get(1) != 0;
+    }
+
+    /**
+     * <strong>Jobs:</strong
+     * <ol>
+     *     <li> Add the value of each attribute to the corresponding list of the node</li>
+     *     <li> Update the labelCounter given the label which comes with the sample</li>
+     *     <li> Update the nmin - aka that you have added another sample to the node</li>
+     * </ol>
+     *
+     * @param node   For a given node
+     * @param sample The sample that has to be added in the given node
+     */
+
+    public void NEW_InsertNewSample(Node node, String[] sample, double weight) {
+        ArrayList<HashMap<Integer, ArrayList<Double>>> statistics = getStatistics();
+        if (node.labelCounts.get(0) == 0 || node.labelCounts.get(1) == 0) {
+            for (int k = 0; k <= 1; k++) {
+                if (node.labelCounts.get(k) == 0 && (k == Integer.parseInt(sample[sample.length - 1]))) {
+                    for (int i = 0; i < node.m_features; i++) {
+                        ArrayList<Double> statistics_per_class = statistics.get(i).get(k);
+
+                        statistics_per_class.set(0, weight); // weightSum
+                        statistics_per_class.set(1, Double.parseDouble(sample[i])); // mean
+                        statistics_per_class.set(2, 0.0); // varianceSum
+                        statistics_per_class.set(3, Double.parseDouble(sample[i]));
+                        statistics_per_class.set(4, Double.parseDouble(sample[i]));
+
+                    }
+                    int label = Integer.parseInt(sample[sample.length - 1]);
+                    UpdateLabelCounters(node, label);
+                    UpdateNMin(node);
+                    return;
+                }
+            }
+        }
+
+        for (int i = 0; i < node.m_features; i++) {
+            double value = Double.parseDouble(sample[i]);
+            int label = Integer.parseInt(sample[sample.length - 1]);
+            ArrayList<Double> local_statistics = statistics.get(i).get(label);
+            double weightSum = local_statistics.get(0) + weight;
+            local_statistics.set(0, weightSum); // weightedSum;
+            double lastMean = local_statistics.get(1);
+            double mean = local_statistics.get(1) + ((value - lastMean) / weightSum);
+            local_statistics.set(1, mean); // mean
+            double varianceSum = local_statistics.get(2) + ((value - lastMean) * (value - mean));
+            local_statistics.set(2, varianceSum); // varianceSum
+
+            if (Double.compare(value, local_statistics.get(3)) < 0) {
+                // current value is less than existing min value
+                local_statistics.set(3, value);
+            } else if (Double.compare(value, local_statistics.get(4)) > 0) {
+                // current value is greater than existing masx value
+                local_statistics.set(4, value);
+            }
+        }
+        int label = Integer.parseInt(sample[sample.length - 1]);
+        UpdateLabelCounters(node, label);
+        UpdateNMin(node);
     }
 
     /**
@@ -369,6 +411,7 @@ public class Node implements Serializable {
      *             <p> Second,if the best attributes satisfy the condition(based on epsilon,tie_threshold) then became the splitting of node </p>
      */
     public void AttemptSplit(Node node, String[] sample) {
+
         double[][] G = FindTheBestAttribute(node); // informationGain,splitAttr,splitValue-row
         double G1 = G[0][0]; // highest information gain
         double G2 = G[0][1]; // second-highest information gain
@@ -384,49 +427,120 @@ public class Node implements Serializable {
             }
             SplitFunction(node, values);
             if (Double.parseDouble(sample[node.splitAttr]) <= node.splitValue) {
-                InsertNewSample(node.leftNode, sample);
+                NEW_InsertNewSample(node.leftNode, sample, 1);
             } else {
-                InsertNewSample(node.rightNode, sample);
+                NEW_InsertNewSample(node.rightNode, sample, 1);
             }
             return;
         } else {
             node.label = -1;
             node.labelCounts.clear();
-            node.samples.clear();
             node.information_gain = 0.0;
             node.nmin = 0;
-            node.counter = node.max_examples_seen;
-            node.label_List.clear();
             ResetNode(node, m_features);
-            InsertNewSample(node, sample);
+            NEW_InsertNewSample(node, sample, 1);
         }
 
         // Reset information gain of node if not done the split
         node.information_gain = 0.0;
 
     }
+    // If the tempG is greater from the already best G, put the tempG in the 0 position and the previous G
+    // to the second.. The previous second has to be overwritten and therefore discarded
 
     /**
-     * @param node   For a given node
-     * @param sample The sample that has to be added in the given node
-     *               <p>
-     *               Jobs
-     *               1. Add the value of each attribute to the corresponding list of the node
-     *               2. Update the labelCounter given the label which comes with the sample
-     *               3. Update the nmin - aka that you have added another sample to the node
+     * <strong> In FindTheBestAttribute there are two phases</strong>
+     * <ol>
+     *     <li> We set the Best and Second Best attributes by initially assigning the information gain of the first and second features respectively</li>
+     *     <li>
+     *         <ol>
+     *                  <li> If the new Information Gain is greater than the already best G.
+     *                      <ol>
+     *                          <li> Downgrade the best feature to second place</li>
+     *                          <li> Place the new feature to the first place</li>
+     *                      </ol>
+     *
+     *                  </li>
+     *                  <li> If the new Information Gain is greater than the second best. Then keep the first one as it is and replace the second one with the new one.</li>
+     *         </ol>
+     *     </li>
+     * </ol>
+     *
+     * @param node HoeffdingTree.Node which attempts to split
+     * @return <p> Finds the best splitting attribute and splitting value for a given node based on Information Gain</p>
      */
-    public void InsertNewSample(Node node, String[] sample) {
-        for (int i = 0; i < sample.length - 1; i++) {
-            LinkedList<Double> list = getAttributeList(node, i);
-            String str = String.format("% .1f", Double.parseDouble(sample[i]));
-            list.add(Double.parseDouble(str));
+    public double[][] FindTheBestAttribute(Node node) {
 
+        double[][] multiples = new double[3][2]; //informationGain,splitAttr,splitValue(rows of array)
+        /*
+         * +===+========0========+========1========+
+         * | - |       GXa       |       GXb       |
+         * | 0 | informationGain | informationGain |
+         * | 1 |  splitAttribute |  splitAttribute |
+         * | 2 |    splitValue   |    splitValue   |
+         * +===+=================+=================+
+         * */
+        for (int i = 0; i < node.m_features; i++) {
+
+//           double[] splitValues = Utilities.Quartiles(val);
+
+            // Calculate informationGain of node for each value and kept the max
+            if (i == 0) {
+                // GXa = the best attribute and GXb = the second best attribute
+                double[] GXa = InformationGain(node, i); // information gain, spitting value
+                double[] GXb = InformationGain(node, i + 1);
+                // Place the best attribute to the 0 position and the second best to the 1 position...
+                if (GXa[0] >= GXb[0]) {
+                    // first place
+                    multiples[0][0] = GXa[0];
+                    multiples[1][0] = i;
+                    multiples[2][0] = GXa[1];
+                    // second place
+                    multiples[0][1] = GXb[0];
+                    multiples[1][1] = i + 1;
+                    multiples[2][1] = GXb[1];
+                    // ... else to the opposite
+                } else {
+                    // first place
+                    multiples[0][0] = GXb[0];
+                    multiples[1][0] = i + 1;
+                    multiples[2][0] = GXb[1];
+                    // second place
+                    multiples[0][1] = GXa[0];
+                    multiples[1][1] = i;
+                    multiples[2][1] = GXa[1];
+
+                }
+                // In case the current attribute is not the first (0) attribute
+            } else if (i > 1) {
+                // Get the G of the first quartile...
+                double[] tempG = InformationGain(node, i);
+
+
+                if (tempG[0] > multiples[0][0]) {
+
+                    // second place (- moving the existing best feature to the second place...)
+                    multiples[0][1] = multiples[0][0];
+                    multiples[1][1] = multiples[1][0];
+                    multiples[2][1] = multiples[2][0];
+
+                    // ... and adding the new information gain to the first place
+                    multiples[0][0] = tempG[0];
+                    multiples[1][0] = i;
+                    multiples[2][0] = tempG[1];
+
+                }
+                // if the tempG is less from the best attribute BUT greater than the second... we put the tempG to the
+                // 1 position and keep the already best to the 0 position
+                else if (tempG[0] > multiples[0][1]) {
+                    multiples[0][1] = tempG[0];
+                    multiples[1][1] = i;
+                    multiples[2][1] = tempG[1];
+                }
+                // else do nothing
+            }
         }
-
-        int label = Integer.parseInt(sample[sample.length - 1]);
-        node.label_List.add(label);
-        UpdateLabelCounters(node, label);
-        UpdateNMin(node);
+        return multiples;
     }
 
     /**
@@ -446,88 +560,6 @@ public class Node implements Serializable {
         return Math.sqrt(fraction);
     }
 
-    /**
-     * @param node HoeffdingTree.Node which attempts to split
-     * @return <p> Finds the best splitting attribute and splitting value for a given node based on Information Gain</p>
-     */
-    public double[][] FindTheBestAttribute(Node node) {
-
-        double[][] multiples = new double[3][2]; //informationGain,splitAttr,splitValue(rows of array)
-        for (int i = 0; i < node.m_features; i++) {
-
-            LinkedList<Double> list = getAttributeList(node, i);
-            double[] val = new double[list.size()];
-            for (int j = 0; j < list.size(); j++) {
-                val[j] = list.get(j);
-            }
-
-            // Calculate splitting value
-            double[] splitValues = Utilities.Quartiles(val);
-
-            // Calculate informationGain of node for each value and kept the max
-            if (i == 0) {
-                // GXa = the best attribute and GXb = the second best attribute
-                double GXa = InformationGain(node, i, splitValues[0]);
-                double GXb = 0.0;
-                // Place the best attribute to the 0 position and the second best to the 1 position...
-                if (GXa >= GXb) {
-                    multiples[0][0] = GXa;
-                    multiples[1][0] = i;
-                    multiples[2][0] = splitValues[0];
-                    multiples[0][1] = GXb;
-                    multiples[1][1] = i + 1;
-                    multiples[2][1] = splitValues[1];
-                    // ... else to the opposite
-                } else {
-                    multiples[0][1] = GXa;
-                    multiples[1][1] = i;
-                    multiples[2][1] = splitValues[0];
-                    multiples[0][0] = GXb;
-                    multiples[1][0] = i + 1;
-                    multiples[2][0] = splitValues[1];
-                }
-                // In case the current attribute is not the first (0) attribute
-            } else {
-                // Get the G of the first quartile...
-                double tempG = InformationGain(node, i, splitValues[0]);
-                // If the tempG is greater from the already best G, put the tempG in the 0 position and the previous G
-                // to the second.. The previous second has to be overwritten and therefore discarded
-                if (tempG > multiples[0][0]) {
-                    multiples[0][1] = multiples[0][0];
-                    multiples[1][1] = multiples[1][0];
-                    multiples[2][1] = multiples[2][0];
-
-                    multiples[0][0] = tempG;
-                    multiples[1][0] = i;
-                    multiples[2][0] = splitValues[0];
-                }
-                // if the tempG is less from the best attribute BUT greater than the second... we put the tempG to the
-                // 1 position and keep the already best to the 0 position
-                else if (tempG > multiples[0][1]) {
-                    multiples[0][1] = tempG;
-                    multiples[1][1] = i;
-                    multiples[2][1] = splitValues[0];
-                }
-                // else do nothing
-            }
-            for (int j = 1; j < splitValues.length; j++) {
-                double tempG = InformationGain(node, i, splitValues[j]);
-                if (tempG > multiples[0][0]) {
-                    multiples[0][1] = multiples[0][0];
-                    multiples[1][1] = multiples[1][0];
-                    multiples[2][1] = multiples[2][0];
-                    multiples[0][0] = tempG;
-                    multiples[1][0] = i;
-                    multiples[2][0] = splitValues[j];
-                } else if (tempG > multiples[0][1]) {
-                    multiples[0][1] = tempG;
-                    multiples[1][1] = i;
-                    multiples[2][1] = splitValues[j];
-                }
-            }
-        }
-        return multiples;
-    }
 
     /**
      * @param node   For a given node
@@ -579,8 +611,6 @@ public class Node implements Serializable {
         child2.information_gain = 0.0;
         child1.label = -1;
         child2.label = -1;
-        child1.node_id = node.node_id + 1023;
-        child2.node_id = node.node_id + 412;
         // Initialize set of attributes for children nodes
         child1.setOfAttr = node.setOfAttr - 1;
         child2.setOfAttr = child1.setOfAttr;
@@ -596,101 +626,158 @@ public class Node implements Serializable {
         child2.tie_threshold = node.tie_threshold;
 
         // Initialize samples,label counters for children nodes
-        child1.InitializeHashMapSamplesAndLabelCounts(node.m_features);
-        child2.InitializeHashMapSamplesAndLabelCounts(node.m_features);
+//        child1.InitializeHashMapSamplesAndLabelCounts(node.m_features);
+//        child2.InitializeHashMapSamplesAndLabelCounts(node.m_features);
 
         // Clear samples,labelCounts,label_List,setOfAttr on parent node
         node.labelCounts.clear();
-        node.samples.clear();
-        node.label_List.clear();
         node.setOfAttr = null;
 
     }
 
+    public double[] FindRange(Node node, double min_class1, double max_class1, double min_class2, double max_class2) {
+
+        double min = min_class2;
+        double max = max_class2;
+        if (min_class1 > min_class2) {
+            min = min_class1;
+        }
+        if (max_class1 < max_class2) {
+            max = max_class1;
+        }
+
+        return Utilities.SplitNormalDistribution(10, min, max);
+    }
+
     /**
-     * @param node       For a given node
-     * @param splitAttr  Splitting attribute
-     * @param splitValue Splitting value for splitAttr
-     *                   <p> Calculate the Information Gain based on on splitAttr and splitValue </p>
+     * @param node      For a given node
+     * @param splitAttr Splitting attribute
+     *                  <p> Calculate the Information Gain based on on splitAttr and splitValue </p>
      * @return Information Gain of node based on splitAttr and splitValue
      */
-    public double InformationGain(Node node, int splitAttr, double splitValue) {
+    public double[] InformationGain(Node node, int splitAttr) {
 
-        // Calculate count for label 0,1
-        int labelCount0Up = 0;
-        int labelCount1Up = 0;
-        int labelCount0Low = 0;
-        int labelCount1Low = 0;
-        for (int i = 0; i < node.samples.get(splitAttr).size(); i++) {
+        double max = -1000.0;
+        double split_point = 0;
+        // Calculate entropy node
+        ArrayList<Double> statistics_class0 = node.getStatistics(splitAttr, 0);
+        ArrayList<Double> statistics_class1 = node.getStatistics(splitAttr, 1);
 
-            if (Double.compare(node.getSamples().get(splitAttr).get(i), splitValue) >= 0) {
-                if (node.label_List.get(i) == 0) {
-                    labelCount0Up++;
-                } else {
-                    labelCount1Up++;
-                }
+        double mean0 = statistics_class0.get(1);
+        double std0 = Math.sqrt(getStdDev(statistics_class0.get(0), statistics_class0.get(2)));
+
+        double mean1 = statistics_class1.get(1);
+        double std1 = Math.sqrt(getStdDev(statistics_class1.get(0), statistics_class1.get(2)));
+
+        NormalDistribution n0 = new NormalDistribution(mean0, std0);
+        NormalDistribution n1 = new NormalDistribution(mean1, std1);
+        double class0_estimation = statistics_class0.get(0) / node.nmin;
+        double class1_estimation = statistics_class1.get(0) / node.nmin;
+        double log0 = Math.log(class0_estimation) / Math.log(2);
+        double log1 = Math.log(class1_estimation) / Math.log(2);
+
+        if (isZero(statistics_class0.get(0))) {
+            log0 = 0;
+        } else if (isZero(statistics_class1.get(0))) {
+            log1 = 0;
+        }
+
+        double entropyNode = (-1) * (class0_estimation * log0) + (-1) * (class1_estimation * log1);
+        node.information_gain = entropyNode;
+        ArrayList<Double> results = new ArrayList<>();
+        String str = statistics_class0.get(1) + "," + std0 + "," + statistics_class1.get(1) + "," + std1 + "," + node.labelCounts.get(0) + "," + node.labelCounts.get(1) + "\n";
+        BufferedWriter writer = null;
+        try {
+            writer = new BufferedWriter(new FileWriter("C://Users//kryst//PycharmProjects//VisualizeNormalDistribution//NormalDistributionSink.txt"));
+            writer.write(str);
+            writer.close();
+        } catch (IOException e) {
+            System.out.println("Problem Writing Statistics");
+        }
+
+        double[] candidate_points = FindRange(node, statistics_class0.get(3), statistics_class0.get(4), statistics_class1.get(3), statistics_class1.get(4));// Calculate splitting value
+        for (double v : candidate_points) {
+            String string = v + "\n";
+            BufferedWriter writer1 = null;
+            try {
+                writer1 = new BufferedWriter(new FileWriter("C://Users//kryst//PycharmProjects//VisualizeNormalDistribution//NormalDistributionSink.txt", true));
+                writer1.write(string);
+                writer1.close();
+            } catch (IOException e) {
+                System.out.println("Problem Writing Candidate Point" + v);
+            }
+
+
+            double lower_tail_class0 = n0.cumulativeProbability(v);
+            double lower_tail_class1 = n1.cumulativeProbability(v);
+            double upper_tail_class0 = 1 - lower_tail_class0;
+            double upper_tail_class1 = 1 - lower_tail_class1;
+
+
+            // Left Node Entropy
+            double entropyLeftNode;
+            double totalLeftProbability = lower_tail_class0 + lower_tail_class1;
+            double lower_tail_class00 = lower_tail_class0 / totalLeftProbability;
+            double lower_tail_class11 = lower_tail_class1 / totalLeftProbability;
+            log0 = Math.log(lower_tail_class00) / Math.log(2);
+            log1 = Math.log(lower_tail_class11) / Math.log(2);
+            if (isZero(lower_tail_class0)) {
+                log0 = 0;
+            } else if (isZero(lower_tail_class1)) {
+                log1 = 0;
+            }
+
+            if (totalLeftProbability == 0) {
+                entropyLeftNode = 0;
             } else {
-                if (node.label_List.get(i) == 0) {
-                    labelCount0Low++;
-                } else {
-                    labelCount1Low++;
-                }
+                entropyLeftNode = (-1) * (lower_tail_class00 * log0) + (-1) * (lower_tail_class11 * log1);
+            }
+
+            // Right Node Entropy
+            double entropyRightNode;
+            double totalRightProbability = upper_tail_class0 + upper_tail_class1;
+            double upper_tail_class00 = upper_tail_class0 / totalRightProbability;
+            double upper_tail_class11 = upper_tail_class1 / totalRightProbability;
+            log0 = Math.log(upper_tail_class00) / Math.log(2);
+            log1 = Math.log(upper_tail_class11) / Math.log(2);
+            if (isZero(upper_tail_class0)) {
+                log0 = 0;
+            } else if (isZero(upper_tail_class1)) {
+                log1 = 0;
+            }
+
+            if (totalRightProbability == 0) {
+                entropyRightNode = 0;
+            } else {
+                entropyRightNode = (-1) * (upper_tail_class00 * log0) + (-1) * (upper_tail_class11 * log1);
+            }
+            double totalProbability = totalLeftProbability + totalRightProbability;
+            ;
+            double weightedEntropy = ((totalLeftProbability / totalProbability) * entropyLeftNode) + ((totalRightProbability / totalProbability) * entropyRightNode);
+
+            double entropyNode1 = entropyNode - weightedEntropy;
+            results.add(entropyNode1);
+            System.out.println(v + " => " + entropyNode1 + "," + max);
+            if (Double.compare(entropyNode1, max) > 0) {
+                max = entropyNode1;
+                split_point = v;
             }
         }
 
-        // Calculate entropy node
-        double log0 = Math.log((double) node.labelCounts.get(0) / node.nmin) / Math.log(2);
-        double log1 = Math.log((double) node.labelCounts.get(1) / node.nmin) / Math.log(2);
-        if (node.labelCounts.get(0) == 0) {
-            log0 = 0;
-        } else if (node.labelCounts.get(1) == 0) {
-            log1 = 0;
-        }
-        double entropyNode = (-1) * (((double) node.labelCounts.get(0) / node.nmin) * log0) + (-1) * (((double) node.labelCounts.get(1) / node.nmin) * log1);
-
-        // Update information_gain node
-        node.information_gain = entropyNode;
-
-        // Calculate entropy based on splitAttr,for left and right node
-        // Left HoeffdingTree.Node
-        double entropyLeftNode;
-        int totalCountLeftNode = labelCount0Up + labelCount1Up;
-        log0 = Math.log((double) labelCount0Up / totalCountLeftNode) / Math.log(2);
-        log1 = Math.log((double) labelCount1Up / totalCountLeftNode) / Math.log(2);
-        if (labelCount0Up == 0) {
-            log0 = 0;
-        } else if (labelCount1Up == 0) {
-            log1 = 0;
-        }
-
-        if (totalCountLeftNode == 0) {
-            entropyLeftNode = 0;
-        } else {
-            entropyLeftNode = (-1) * (((double) labelCount0Up / totalCountLeftNode) * log0) + (-1) * (((double) labelCount1Up / totalCountLeftNode) * log1);
-        }
-
-        // Right HoeffdingTree.Node
-        double entropyRightNode;
-        int totalCountRightNode = labelCount0Low + labelCount1Low;
-        log0 = Math.log((double) labelCount0Low / totalCountRightNode) / Math.log(2);
-        log1 = Math.log((double) labelCount1Low / totalCountRightNode) / Math.log(2);
-        if (labelCount0Low == 0) {
-            log0 = 0;
-        } else if (labelCount1Low == 0) {
-            log1 = 0;
-        }
-
-        if (totalCountRightNode == 0) {
-            entropyRightNode = 0;
-        } else {
-            entropyRightNode = (-1) * (((double) labelCount0Low / totalCountRightNode) * log0) + (-1) * (((double) labelCount1Low / totalCountRightNode) * log1);
-        }
-
-        //Calculate weighted average entropy of splitAttr
-        double weightedEntropy = (((double) totalCountLeftNode / node.nmin) * entropyLeftNode) + (((double) totalCountRightNode / node.nmin) * entropyRightNode);
-
-        return entropyNode - weightedEntropy;
+        double[] returned_values = new double[2];
+        returned_values[0] = max;
+        returned_values[1] = split_point;
+        return returned_values;
 
     }
+
+    public boolean isZero(double value) {
+        return value >= -0.0000000001 && value <= 0.0000000001;
+    }
+
+    public double getStdDev(double weightSum, double varianceSum) {
+        return varianceSum / (weightSum - 1);
+    }
+
 
 }
