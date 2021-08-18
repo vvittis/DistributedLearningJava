@@ -127,9 +127,7 @@ public class DDM implements ConceptDriftDetector
         {
             return STABLE;
         }
-        else{
-            return -100;
-        }
+
     }
 
     @Override

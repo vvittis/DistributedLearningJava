@@ -95,13 +95,6 @@ public class HoeffdingTree implements Serializable {
         return predicted_value;
     }
 
-    /**
-     * @param node For a given node
-     *             <p> Return the root of Hoeffding tree </p>
-     */
-    public Node FindRoot(Node node) {
-        return node.FindRoot(node);
-    }
 
     /**
      * <p>This function clears all the Hoeffding Tree.</p>

@@ -27,9 +27,7 @@ public class Node implements Serializable {
     public Integer nmin;            // Keep tracking the number of samples seen
     public Integer nmin_last_check; // Number of instances from last check
     public Double information_gain; // the information gain corresponding to the best attribute and the best value
-    public Integer setOfAttr;       // set of features
     public ArrayList<HashMap<Integer, ArrayList<Double>>> statistics = new ArrayList<>(); // number of values for each column
-
     /*
      *  ||          feature 1        || ... ||      feature N            ||     <- ArrayList <
      *  || ------------------------------------------------------------- ||
@@ -42,7 +40,6 @@ public class Node implements Serializable {
 
     Node leftNode;                 // leftNode
     Node rightNode;                // rightNode
-    Node parentNode;               // parentNode
     public int m_features;         // randomly selected subset of features
     public int max_examples_seen;  // the number of examples between checks for growth(n_min)
     public double delta;           // one minus the desired probability of choosing the correct feature at any given node
@@ -72,7 +69,6 @@ public class Node implements Serializable {
     public Integer getNmin() {
         return this.nmin;
     }
-
 
 
     public void ResetNode(Node node, int number_of_attributes) {
@@ -127,7 +123,6 @@ public class Node implements Serializable {
     }
 
 
-
     /**
      * @param m_features        randomly selected subset of features
      * @param max_examples_seen the number of examples between checks for growth(n_min)
@@ -144,10 +139,8 @@ public class Node implements Serializable {
         this.nmin_last_check = 0;
         this.leftNode = null;
         this.rightNode = null;
-        this.parentNode = null;
         this.splitAttr = null;
         this.splitValue = null;
-        this.setOfAttr = m_features;
         this.delta = delta;
         this.max_examples_seen = max_examples_seen;
         this.m_features = m_features;
@@ -167,6 +160,7 @@ public class Node implements Serializable {
     public void NEW_InitializeStatisticsAndLabelCounts(int number_of_attributes) {
 
         // Initialize HashMap for Samples
+
         ArrayList<HashMap<Integer, ArrayList<Double>>> statistics = this.getStatistics();
         for (int i = 0; i < number_of_attributes; i++) {
 
@@ -174,8 +168,8 @@ public class Node implements Serializable {
 
             statistics_class1.add(0, 0.0); // weightSum
             statistics_class1.add(1, 0.0); // mean
-            statistics_class1.add(2, 0.0); // varianceSum
-            statistics_class1.add(3, Double.MAX_VALUE); // min
+            statistics_class1.add(2, 0.1); // varianceSum
+            statistics_class1.add(3, 0.0); // min
             statistics_class1.add(4, 0.0); // max
 
             ArrayList<Double> statistics_class2 = new ArrayList<Double>();
@@ -258,32 +252,13 @@ public class Node implements Serializable {
             node.nmin = 0;
             node.leftNode = null;
             node.rightNode = null;
-            node.parentNode = null;
             node.splitAttr = null;
             node.splitValue = null;
-            node.setOfAttr = null;
             node.m_features = 0;
             node.max_examples_seen = 0;
             node.delta = 0.0;
             node.tie_threshold = 0.0;
             System.gc();
-        }
-    }
-
-    /**
-     * @param node For a given node
-     *             <p> Return the root of Hoeffding tree </p>
-     */
-    public Node FindRoot(Node node) {
-
-        if (node.parentNode == null) {
-            return node;
-        } else {
-            Node newNode = node.parentNode;
-            while (newNode.parentNode != null) {
-                newNode = newNode.parentNode;
-            }
-            return newNode;
         }
     }
 
@@ -303,8 +278,18 @@ public class Node implements Serializable {
      */
     public void UpdateHT(Node node, String[] sample, int weight) {
         Node updatedNode = TraverseTree(node, sample);
+//        if (updatedNode.nmin == 200) {
+//
+//            ArrayList<Double> statistics_class0 = updatedNode.getStatistics(1, 0);
+//
+//            double std0 = Math.sqrt(getStdDev(statistics_class0.get(0), statistics_class0.get(2)));
+//            System.out.println(std0);
+//            if ((Double.compare(std0,0) ==0)) {
+//                System.out.println("sheesh");
+//            }
+//        }
         if (NeedForSplit(updatedNode)) {
-            AttemptSplit(updatedNode, sample);
+            AttemptSplit(updatedNode, sample,weight);
         } else {
             NEW_InsertNewSample(updatedNode, sample, weight);
         }
@@ -357,7 +342,7 @@ public class Node implements Serializable {
      */
 
     public void NEW_InsertNewSample(Node node, String[] sample, double weight) {
-        ArrayList<HashMap<Integer, ArrayList<Double>>> statistics = getStatistics();
+        ArrayList<HashMap<Integer, ArrayList<Double>>> statistics = node.getStatistics();
         if (node.labelCounts.get(0) == 0 || node.labelCounts.get(1) == 0) {
             for (int k = 0; k <= 1; k++) {
                 if (node.labelCounts.get(k) == 0 && (k == Integer.parseInt(sample[sample.length - 1]))) {
@@ -378,7 +363,6 @@ public class Node implements Serializable {
                 }
             }
         }
-
         for (int i = 0; i < node.m_features; i++) {
             double value = Double.parseDouble(sample[i]);
             int label = Integer.parseInt(sample[sample.length - 1]);
@@ -410,7 +394,7 @@ public class Node implements Serializable {
      *             <p> First, find the best attributes to split the node </p>
      *             <p> Second,if the best attributes satisfy the condition(based on epsilon,tie_threshold) then became the splitting of node </p>
      */
-    public void AttemptSplit(Node node, String[] sample) {
+    public void AttemptSplit(Node node, String[] sample,int weight ) {
 
         double[][] G = FindTheBestAttribute(node); // informationGain,splitAttr,splitValue-row
         double G1 = G[0][0]; // highest information gain
@@ -427,22 +411,14 @@ public class Node implements Serializable {
             }
             SplitFunction(node, values);
             if (Double.parseDouble(sample[node.splitAttr]) <= node.splitValue) {
-                NEW_InsertNewSample(node.leftNode, sample, 1);
+                NEW_InsertNewSample(node.leftNode, sample, weight);
             } else {
-                NEW_InsertNewSample(node.rightNode, sample, 1);
+                NEW_InsertNewSample(node.rightNode, sample, weight);
             }
             return;
-        } else {
-            node.label = -1;
-            node.labelCounts.clear();
-            node.information_gain = 0.0;
-            node.nmin = 0;
-            ResetNode(node, m_features);
-            NEW_InsertNewSample(node, sample, 1);
         }
+        NEW_InsertNewSample(node, sample, weight);
 
-        // Reset information gain of node if not done the split
-        node.information_gain = 0.0;
 
     }
     // If the tempG is greater from the already best G, put the tempG in the 0 position and the previous G
@@ -594,26 +570,24 @@ public class Node implements Serializable {
         Node child2 = new Node();
 
         // Initialize parent and child nodes
-        child1.parentNode = node;
-        child2.parentNode = node;
         node.leftNode = child1;
         node.rightNode = child2;
+        node.nmin_last_check = 0;
         node.nmin = 0;
         // Initialize informationGain,splitAttribute,splitValue for node(parent-node)
-        node.information_gain = values[0];
         node.splitAttr = (int) values[1];
         node.splitValue = values[2];
 
         // Initialize nmin,information_gain,label for children nodes
         child1.nmin = 0;
+        child1.nmin_last_check = 0;
         child2.nmin = 0;
+        child2.nmin_last_check = 0;
         child1.information_gain = 0.0;
         child2.information_gain = 0.0;
         child1.label = -1;
         child2.label = -1;
-        // Initialize set of attributes for children nodes
-        child1.setOfAttr = node.setOfAttr - 1;
-        child2.setOfAttr = child1.setOfAttr;
+
 
         // Initialize m_features,max_examples_seen,delta,tie_threshold for children nodes
         child1.m_features = node.m_features;
@@ -626,13 +600,11 @@ public class Node implements Serializable {
         child2.tie_threshold = node.tie_threshold;
 
         // Initialize samples,label counters for children nodes
-//        child1.InitializeHashMapSamplesAndLabelCounts(node.m_features);
-//        child2.InitializeHashMapSamplesAndLabelCounts(node.m_features);
+        child1.NEW_InitializeStatisticsAndLabelCounts(child1.m_features);
+        child2.NEW_InitializeStatisticsAndLabelCounts(child2.m_features);
 
         // Clear samples,labelCounts,label_List,setOfAttr on parent node
         node.labelCounts.clear();
-        node.setOfAttr = null;
-
     }
 
     public double[] FindRange(Node node, double min_class1, double max_class1, double min_class2, double max_class2) {
@@ -665,11 +637,16 @@ public class Node implements Serializable {
 
         double mean0 = statistics_class0.get(1);
         double std0 = Math.sqrt(getStdDev(statistics_class0.get(0), statistics_class0.get(2)));
-
+        if (isZero(std0)) {
+            std0 = 0.01;
+        }
         double mean1 = statistics_class1.get(1);
         double std1 = Math.sqrt(getStdDev(statistics_class1.get(0), statistics_class1.get(2)));
-
         NormalDistribution n0 = new NormalDistribution(mean0, std0);
+        if (isZero(std1)) {
+            std1 = 0.01;
+        }
+
         NormalDistribution n1 = new NormalDistribution(mean1, std1);
         double class0_estimation = statistics_class0.get(0) / node.nmin;
         double class1_estimation = statistics_class1.get(0) / node.nmin;
@@ -685,6 +662,7 @@ public class Node implements Serializable {
         double entropyNode = (-1) * (class0_estimation * log0) + (-1) * (class1_estimation * log1);
         node.information_gain = entropyNode;
         ArrayList<Double> results = new ArrayList<>();
+        ArrayList<Double> results1 = new ArrayList<>();
         String str = statistics_class0.get(1) + "," + std0 + "," + statistics_class1.get(1) + "," + std1 + "," + node.labelCounts.get(0) + "," + node.labelCounts.get(1) + "\n";
         BufferedWriter writer = null;
         try {
@@ -717,8 +695,8 @@ public class Node implements Serializable {
             // Left Node Entropy
             double entropyLeftNode;
             double totalLeftProbability = lower_tail_class0 + lower_tail_class1;
-            double lower_tail_class00 = lower_tail_class0 / totalLeftProbability;
-            double lower_tail_class11 = lower_tail_class1 / totalLeftProbability;
+            double lower_tail_class00 = (lower_tail_class0 / totalLeftProbability);
+            double lower_tail_class11 = (lower_tail_class1 / totalLeftProbability);
             log0 = Math.log(lower_tail_class00) / Math.log(2);
             log1 = Math.log(lower_tail_class11) / Math.log(2);
             if (isZero(lower_tail_class0)) {
@@ -735,9 +713,9 @@ public class Node implements Serializable {
 
             // Right Node Entropy
             double entropyRightNode;
-            double totalRightProbability = upper_tail_class0 + upper_tail_class1;
-            double upper_tail_class00 = upper_tail_class0 / totalRightProbability;
-            double upper_tail_class11 = upper_tail_class1 / totalRightProbability;
+            double totalRightProbability = upper_tail_class0 + class1_estimation * upper_tail_class1;
+            double upper_tail_class00 = (upper_tail_class0 / totalRightProbability);
+            double upper_tail_class11 = (upper_tail_class1 / totalRightProbability);
             log0 = Math.log(upper_tail_class00) / Math.log(2);
             log1 = Math.log(upper_tail_class11) / Math.log(2);
             if (isZero(upper_tail_class0)) {
@@ -752,12 +730,12 @@ public class Node implements Serializable {
                 entropyRightNode = (-1) * (upper_tail_class00 * log0) + (-1) * (upper_tail_class11 * log1);
             }
             double totalProbability = totalLeftProbability + totalRightProbability;
-            ;
+
             double weightedEntropy = ((totalLeftProbability / totalProbability) * entropyLeftNode) + ((totalRightProbability / totalProbability) * entropyRightNode);
 
             double entropyNode1 = entropyNode - weightedEntropy;
             results.add(entropyNode1);
-            System.out.println(v + " => " + entropyNode1 + "," + max);
+//            System.out.println(v + " => " + entropyNode1 + "," + max);
             if (Double.compare(entropyNode1, max) > 0) {
                 max = entropyNode1;
                 split_point = v;

@@ -9,11 +9,15 @@ public interface ConceptDriftDetector extends Serializable {
     int FALSE_ALARM = -1;
 
 
-
-
     void FindConceptDrift(double error_rate);
 
     int getCurrentDriftStatus();
 
+    int getSignal();
+
+    void updateCurrentDriftStatus();
+
+
+    void ResetConceptDrift();
 
 }
