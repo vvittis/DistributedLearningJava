@@ -19,8 +19,7 @@ public class HoeffdingTree implements Serializable {
     public int[] m_features; // list of labels corresponding to samples of node
     public Node root = new Node();
 
-    public HoeffdingTree() {
-    }
+    public HoeffdingTree() {}
 
 
     /**
@@ -35,7 +34,7 @@ public class HoeffdingTree implements Serializable {
 
     public void NEW_CreateHoeffdingTree
             (int m_features, int Max, int max_examples_seen, double delta, double tie_threshold, int combination_function_id, int hoeffding_tree_id, int background_tree_indicator) {
-        root.NEW_CreateHT(m_features, max_examples_seen, delta, tie_threshold);
+        root.CreateHT(m_features, max_examples_seen, delta, tie_threshold);
         instances_seen = 0.0;
         correctly_classified = 0.0;
         weight = 0.0;
@@ -54,11 +53,6 @@ public class HoeffdingTree implements Serializable {
         String[] selectedInput = this.select_m_features(input);
         node.UpdateHT(node, selectedInput, weight);
     }
-
-    public int SizeHT(Node node) {
-        return node.SizeHT(node);
-    }
-
 
     /**
      * @param node     For a given node
@@ -116,14 +110,11 @@ public class HoeffdingTree implements Serializable {
         this.weight = correctly_classified / instances_seen;
     }
 
-
     public double getAccuracy() {
         return this.weight;
     }
 
-    public double getErrorRate() {
-        return 1 - this.weight;
-    }
+    public double getErrorRate() {return 1 - this.weight;}
 
     /**
      * @param m   how many features I want the Hoeffding Tree to have

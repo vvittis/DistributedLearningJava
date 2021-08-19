@@ -199,13 +199,8 @@ public class DistributedLearning {
                          * "As each training example is presented ot our algorithm, for each base model,
                          * choose the example K - Poisson(1) times and update the base model accordingly."
                          */
-//                        if(true_label == 0) {
-//                            System.out.println("Training 0 " + features[0] + "," + features[1] + "," + true_label + "," + instance_weight + "," + instance_id);
-//                        }
-//                        if(true_label == 1) {
-//                            System.out.println("                                                    Training 1 " + features[0] + "," + features[1] + "," + true_label + "," + instance_weight + "," + instance_id);
-//                        }
-                        ht.UpdateHoeffdingTree(ht.root, features, 1);
+
+                        ht.UpdateHoeffdingTree(ht.root, features, instance_weight);
 
                         //error_rate = ht.getErrorRate();
                         hoeffdingTreeValueState.update(ht);
@@ -225,9 +220,7 @@ public class DistributedLearning {
                                 // WARNING PHASE
                                 if (!empty_background_state.value()) {
                                     HoeffdingTree background_hoeffdingTree = background_hoeffdingTreeValueState.value();
-                                    for (int i = 0; i < instance_weight; i++) {
-                                        background_hoeffdingTree.UpdateHoeffdingTree(background_hoeffdingTree.root, features, instance_weight);
-                                    }
+                                    background_hoeffdingTree.UpdateHoeffdingTree(background_hoeffdingTree.root, features, instance_weight);
                                     background_hoeffdingTreeValueState.update(background_hoeffdingTree);
                                 } else if (empty_background_state.value()) {
                                     // System.out.println("===================================Warning Phase===================================");
@@ -305,7 +298,7 @@ public class DistributedLearning {
 //                        if(true_label == 1) {
 //                            System.out.println("                                                    Training 1 " + features[0] + "," + features[1] + "," + true_label + "," + instance_weight + "," + instance_id);
 //                        }
-                        ht.UpdateHoeffdingTree(ht.root, features, 1);
+                        ht.UpdateHoeffdingTree(ht.root, features, instance_weight);
 
                         hoeffdingTreeValueState.update(ht);
                     }
