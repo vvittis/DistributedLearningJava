@@ -7,7 +7,7 @@ public class ConceptDriftFactory {
         if(drift_detection_method_id == 1){
             return new DDM();
         }else if( drift_detection_method_id == 2){
-            return new EDDM();
+            return new RDDM();
         }
         else{
             return new EDDM();

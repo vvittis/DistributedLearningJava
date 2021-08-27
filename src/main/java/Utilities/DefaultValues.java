@@ -22,12 +22,14 @@ package Utilities;
  *                                      1 => Reactive Drift Detection Method (RDDM)
  */
 public class DefaultValues {
-
+    int parallelism = 8;
     int number_of_hoeffding_trees = 1;
     int combination_function = 3;
     double weighted_voting_parameter = 1;
-    int age_of_maturity = 1000;
-    int drift_detection_method_id = 0;
+    int age_of_maturity = 10000;
+    int drift_detection_method_id = 2;
+
+
 
     public DefaultValues(){};
 
@@ -50,5 +52,7 @@ public class DefaultValues {
     public int getDrift_detection_method_id() {
         return drift_detection_method_id;
     }
+
+    public int getParallelism() {return parallelism;}
 
 }

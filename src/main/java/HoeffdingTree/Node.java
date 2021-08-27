@@ -26,10 +26,10 @@ public class Node implements Serializable {
      * || class 1 counter || class 2 counter ||
      *
      * */
-    public int m_features;         // randomly selected subset of features
-    public int max_examples_seen;  // the number of examples between checks for growth(n_min)
-    public double delta;           // one minus the desired probability of choosing the correct feature at any given node
-    public double tie_threshold;   // tie threshold between splitting values of selected features for split
+    public int m_features;          // randomly selected subset of features
+    public int max_examples_seen;   // the number of examples between checks for growth(n_min)
+    public double delta;            // one minus the desired probability of choosing the correct feature at any given node
+    public double tie_threshold;    // tie threshold between splitting values of selected features for split
     public Integer nmin;            // Keep tracking the number of samples seen
     public Integer nmin_last_check; // Number of instances from last check
     public ArrayList<HashMap<Integer, ArrayList<Double>>> statistics = new ArrayList<>(); // number of values for each column
@@ -46,15 +46,18 @@ public class Node implements Serializable {
     Node leftNode;                 // leftNode
     Node rightNode;                // rightNode
 
-    public Node() {}
+    public Node() {
+    }
 
-//    <===================================== GETTERS AND SETTERS =====================================>
+    //    <===================================== GETTERS AND SETTERS =====================================>
 
     public ArrayList<HashMap<Integer, ArrayList<Double>>> getStatistics() {
         return statistics;
     }
 
-    public ArrayList<Double> getStatistics(int index, int class_label) {return statistics.get(index).get(class_label);}
+    public ArrayList<Double> getStatistics(int index, int class_label) {
+        return statistics.get(index).get(class_label);
+    }
 
     public HashMap<Integer, Integer> getLabelCounts() {
         return labelCounts;
@@ -64,7 +67,20 @@ public class Node implements Serializable {
         return this.nmin;
     }
 
-//    <===================================== CREATE HOEFFDING TREE=====================================>
+
+    public int countNode(Node root) {
+
+        //base case
+        if (root == null)
+            return 0;
+
+        //recursive call to left child and right child and
+        // add the result of these with 1 ( 1 for counting the root)
+        return 1 + countNode(root.leftNode) + countNode(root.rightNode);
+    }
+
+    //    <===================================== CREATE HOEFFDING TREE=====================================>
+
     /**
      * @param m_features        randomly selected subset of features
      * @param max_examples_seen the number of examples between checks for growth(n_min)
@@ -91,21 +107,20 @@ public class Node implements Serializable {
     }
 
     /**
+     * <strong> For the Arraylist of Statistics: </strong>
+     * The only necessary statistics are:
+     * <ol>
+     * <li> <strong>WeightSum</strong> which refers to the sum of weights produced by the Online Bagging </li>
+     * <li> <strong>Mean</strong></li>
+     * <li> <strong>VarianceSum</strong></li>
+     * <li> <strong>Min</strong></li>
+     * <li> <strong>Max</strong></li>
+     * </ol>
+     * <strong>For LabelCounters HashMap: </strong>
+     * <p>
+     * We know that we have a binary problem (0:Non Fraud, 1:Fraud) so we need only 2 <0,?> and <1,?> in order to keep track the
+     * label counts
      *
-     *
-     *     <strong> For the Arraylist of Statistics: </strong>
-     *     The only necessary statistics are:
-     *     <ol>
-     *     <li> <strong>WeightSum</strong> which refers to the sum of weights produced by the Online Bagging </li>
-     *     <li> <strong>Mean</strong></li>
-     *     <li> <strong>VarianceSum</strong></li>
-     *     <li> <strong>Min</strong></li>
-     *     <li> <strong>Max</strong></li>
-     *     </ol>
-     *     <strong>For LabelCounters HashMap: </strong>
-     *
-     *     We know that we have a binary problem (0:Non Fraud, 1:Fraud) so we need only 2 <0,?> and <1,?> in order to keep track the
-     *     label counts
      * @param number_of_attributes <p> Each node has a Samples HashMap and a LabelCounters HashMap
      *                             in order to add new stuff to them, we have to initialize them
      */
@@ -146,22 +161,18 @@ public class Node implements Serializable {
     }
 
     // <===================================== TEST HOEFFDING TREE =====================================>
+
     /**
      * @param node   For a given node(root)
      * @param sample An array of values of features which will be use for testing
      *               <p> Traverse the tree using sample and return the label of node at which it ends </p>
      */
 
-    public int TestHT(Node node, String[] sample) {
+    public HoeffdingTree.Returninfo TestHT(Node node, String[] sample) {
         Node updatedNode = TraverseTree(node, sample);
-        return updatedNode.label;
-    }
+        return new HoeffdingTree.Returninfo(updatedNode,updatedNode.label);
 
-    /**
-     * @param node Root Node
-     * @param sample An array of values of features which will be use for traverse the tree
-     * @return The target Node
-     */
+    }
 
     public Node TraverseTree(Node node, String[] sample) {
 
@@ -185,17 +196,13 @@ public class Node implements Serializable {
      * @param node This function clears all the Hoeffding Tree. All it needs is the root
      */
 
-    public Node RemoveHT(Node node) {
+    public void RemoveHT(Node node) {
 
         if (node == null) {
-            return node;
+            return;
         } else {
-            Node leftNode  = RemoveHT(node.leftNode);
-            Node rightNode = RemoveHT(node.rightNode);
-
-            leftNode = null;
-            rightNode = null;
-
+            RemoveHT(node.leftNode);
+            RemoveHT(node.rightNode);
             node.splitAttr = null;
             node.splitValue = null;
             node.label = null;
@@ -206,11 +213,11 @@ public class Node implements Serializable {
             node.delta = 0.0;
             node.tie_threshold = 0.0;
             node.nmin = 0;
-            node.nmin_last_check =0;
+            node.nmin_last_check = 0;
             node.leftNode = null;
             node.rightNode = null;
             System.gc();
-            return null;
+
         }
     }
 
@@ -228,13 +235,15 @@ public class Node implements Serializable {
      * @param sample An array of values of attributes aka sample
      */
 
-    public void UpdateHT(Node node, String[] sample, int weight) {
+    public double[] UpdateHT(Node node, String[] sample, int weight, double[] statistics_entropy_history, double[] statistics_ig_history) {
         Node updatedNode = TraverseTree(node, sample);
+        double[] ht_statistics = new double[]{-1.0, -1.0};
         if (NeedForSplit(updatedNode)) {
-            AttemptSplit(updatedNode, sample, weight);
+            ht_statistics = AttemptSplit(updatedNode, sample, weight, statistics_entropy_history, statistics_ig_history);
         } else {
             InsertNewSample(updatedNode, sample, weight);
         }
+        return ht_statistics;
     }
 
     /**
@@ -248,6 +257,7 @@ public class Node implements Serializable {
 
     public boolean NeedForSplit(Node node) {
         if (node.getNmin() - node.nmin_last_check >= node.max_examples_seen) {
+//            System.out.println("Current nmin"+ node.getNmin()+" Last Check nmin"+node.nmin_last_check);
             node.nmin_last_check = node.getNmin();
             return CheckHomogeneity(node);
         }
@@ -267,6 +277,7 @@ public class Node implements Serializable {
      * @param node For a given node
      * @return whether or not a given node is homogeneous or not
      */
+
     public boolean CheckHomogeneity(Node node) {
         HashMap<Integer, Integer> labels_hash_map = node.getLabelCounts();
         return labels_hash_map.get(0) != 0 && labels_hash_map.get(1) != 0;
@@ -278,32 +289,44 @@ public class Node implements Serializable {
      *             <p> First, find the best attributes to split the node </p>
      *             <p> Second,if the best attributes satisfy the condition(based on epsilon,tie_threshold) then became the splitting of node </p>
      */
-    public void AttemptSplit(Node node, String[] sample, int weight) {
+
+    public double[] AttemptSplit(Node node, String[] sample, int weight, double[] statistics_entropy_history, double[] statistics_ig_history) {
 
         double[][] G = FindTheBestAttribute(node); // informationGain,splitAttr,splitValue-row
         double G1 = G[0][0]; // highest information gain
         double G2 = G[0][1]; // second-highest information gain
-
         // Calculate epsilon
         double epsilon = CalculateHoeffdingBound(node);
 
-        // Attempt split ///
+        // Attempt split
         if ((((G1 - G2) > epsilon) || (G1 - G2) < node.tie_threshold)) {
-            double[] values = new double[3];
-            for (int i = 0; i < 3; i++) {
-                values[i] = G[i][0];
-            }
-            SplitFunction(node, values);
-            if (Double.parseDouble(sample[node.splitAttr]) <= node.splitValue) {
-                InsertNewSample(node.leftNode, sample, weight);
+
+            double[] ht_statistics = {node.information_gain, G1};
+//            System.out.println("H "+node.information_gain+",        Mean " +statistics_entropy_history[0] +" Variance "+ statistics_entropy_history[4] +" Add "+ (statistics_entropy_history[0]+statistics_entropy_history[4]));
+            int entropy = Double.compare(node.information_gain, (statistics_entropy_history[0] + statistics_entropy_history[4]));
+
+            int ig = Double.compare(G1, (statistics_ig_history[0] + statistics_ig_history[4]));
+            // (entropy > 0) || (ig > 0);
+            // true; - for testing
+            boolean svfdt_ii_constraints =  (entropy > 0) || (ig > 0);
+            if (svfdt_ii_constraints) {
+
+                double[] values = {G[0][0], G[1][0], G[2][0],G[3][0],G[4][0]};
+
+                SplitFunction(node, values);
+                if (Double.parseDouble(sample[node.splitAttr]) <= node.splitValue) {
+                    InsertNewSample(node.leftNode, sample, weight);
+                } else {
+                    InsertNewSample(node.rightNode, sample, weight);
+                }
             } else {
-                InsertNewSample(node.rightNode, sample, weight);
+                InsertNewSample(node, sample, weight);
             }
-            return;
+            return ht_statistics;
         }
         InsertNewSample(node, sample, weight);
 
-
+        return new double[]{-1.0, -1.0};
     }
 
     /**
@@ -330,7 +353,7 @@ public class Node implements Serializable {
 
     public double[][] FindTheBestAttribute(Node node) {
 
-        double[][] multiples = new double[3][2]; //informationGain,splitAttr,splitValue(rows of array)
+        double[][] multiples = new double[5][2]; //informationGain,splitAttr,splitValue(rows of array)
         /*
          * +===+========0========+========1========+
          * | - |       GXa       |       GXb       |
@@ -354,20 +377,28 @@ public class Node implements Serializable {
                     multiples[0][0] = GXa[0];
                     multiples[1][0] = i;
                     multiples[2][0] = GXa[1];
+                    multiples[3][0] = GXa[2];
+                    multiples[4][0] = GXa[3];
                     // second place
                     multiples[0][1] = GXb[0];
                     multiples[1][1] = i + 1;
                     multiples[2][1] = GXb[1];
+                    multiples[3][0] = GXb[2];
+                    multiples[4][0] = GXb[3];
                     // ... else to the opposite
                 } else {
                     // first place
                     multiples[0][0] = GXb[0];
                     multiples[1][0] = i + 1;
                     multiples[2][0] = GXb[1];
+                    multiples[3][0] = GXb[2];
+                    multiples[4][0] = GXb[3];
                     // second place
                     multiples[0][1] = GXa[0];
                     multiples[1][1] = i;
                     multiples[2][1] = GXa[1];
+                    multiples[3][0] = GXa[2];
+                    multiples[4][0] = GXa[3];
 
                 }
                 // In case the current attribute is not the first (0) attribute
@@ -382,11 +413,15 @@ public class Node implements Serializable {
                     multiples[0][1] = multiples[0][0];
                     multiples[1][1] = multiples[1][0];
                     multiples[2][1] = multiples[2][0];
+                    multiples[3][1] = multiples[3][0];
+                    multiples[4][1] = multiples[4][0];
 
                     // ... and adding the new information gain to the first place
                     multiples[0][0] = tempG[0];
                     multiples[1][0] = i;
                     multiples[2][0] = tempG[1];
+                    multiples[3][0] = tempG[2];
+                    multiples[4][0] = tempG[3];
 
                 }
                 // if the tempG is less from the best attribute BUT greater than the second... we put the tempG to the
@@ -395,6 +430,8 @@ public class Node implements Serializable {
                     multiples[0][1] = tempG[0];
                     multiples[1][1] = i;
                     multiples[2][1] = tempG[1];
+                    multiples[3][1] = tempG[2];
+                    multiples[4][1] = tempG[3];
                 }
                 // else do nothing
             }
@@ -413,6 +450,8 @@ public class Node implements Serializable {
 
         double max = -1000.0;
         double split_point = 0;
+        double dominant_left = -1;
+        double dominant_right = -1;
         // Calculate entropy node
         ArrayList<Double> statistics_class0 = node.getStatistics(splitAttr, 0);
         ArrayList<Double> statistics_class1 = node.getStatistics(splitAttr, 1);
@@ -443,28 +482,28 @@ public class Node implements Serializable {
 
         double entropyNode = (-1) * (class0_estimation * log0) + (-1) * (class1_estimation * log1);
         node.information_gain = entropyNode;
-        ArrayList<Double> results = new ArrayList<>();
-        String str = statistics_class0.get(1) + "," + std0 + "," + statistics_class1.get(1) + "," + std1 + "," + node.labelCounts.get(0) + "," + node.labelCounts.get(1) + "\n";
-        BufferedWriter writer = null;
-        try {
-            writer = new BufferedWriter(new FileWriter("C://Users//kryst//PycharmProjects//VisualizeNormalDistribution//NormalDistributionSink.txt"));
-            writer.write(str);
-            writer.close();
-        } catch (IOException e) {
-            System.out.println("Problem Writing Statistics");
-        }
+//        ArrayList<Double> results = new ArrayList<>();
+//        String str = statistics_class0.get(1) + "," + std0 + "," + statistics_class1.get(1) + "," + std1 + "," + node.labelCounts.get(0) + "," + node.labelCounts.get(1) + "\n";
+//        BufferedWriter writer = null;
+//        try {
+//            writer = new BufferedWriter(new FileWriter("C://Users//kryst//PycharmProjects//VisualizeNormalDistribution//NormalDistributionSink.txt"));
+//            writer.write(str);
+//            writer.close();
+//        } catch (IOException e) {
+//            System.out.println("Problem Writing Statistics");
+//        }
 
         double[] candidate_points = FindRange(node, statistics_class0.get(3), statistics_class0.get(4), statistics_class1.get(3), statistics_class1.get(4));// Calculate splitting value
         for (double v : candidate_points) {
-            String string = v + "\n";
-            BufferedWriter writer1 = null;
-            try {
-                writer1 = new BufferedWriter(new FileWriter("C://Users//kryst//PycharmProjects//VisualizeNormalDistribution//NormalDistributionSink.txt", true));
-                writer1.write(string);
-                writer1.close();
-            } catch (IOException e) {
-                System.out.println("Problem Writing Candidate Point" + v);
-            }
+//            String string = v + "\n";
+//            BufferedWriter writer1 = null;
+//            try {
+//                writer1 = new BufferedWriter(new FileWriter("C://Users//kryst//PycharmProjects//VisualizeNormalDistribution//NormalDistributionSink.txt", true));
+//                writer1.write(string);
+//                writer1.close();
+//            } catch (IOException e) {
+//                System.out.println("Problem Writing Candidate Point" + v);
+//            }
 
 
             double lower_tail_class0 = n0.cumulativeProbability(v);
@@ -515,17 +554,31 @@ public class Node implements Serializable {
             double weightedEntropy = ((totalLeftProbability / totalProbability) * entropyLeftNode) + ((totalRightProbability / totalProbability) * entropyRightNode);
 
             double entropyNode1 = entropyNode - weightedEntropy;
-            results.add(entropyNode1);
+//            results.add(entropyNode1);
 //            System.out.println(v + " => " + entropyNode1 + "," + max);
             if (Double.compare(entropyNode1, max) > 0) {
                 max = entropyNode1;
                 split_point = v;
+                if( lower_tail_class00 > lower_tail_class11){
+                    dominant_left = 0;
+                }
+                else if( lower_tail_class00 < lower_tail_class11){
+                    dominant_left = 1;
+                }
+                if(upper_tail_class00 > upper_tail_class11){
+                    dominant_right = 0;
+                }
+                else if(upper_tail_class00 < upper_tail_class11){
+                    dominant_right = 1;
+                }
             }
         }
 
-        double[] returned_values = new double[2];
+        double[] returned_values = new double[4];
         returned_values[0] = max;
         returned_values[1] = split_point;
+        returned_values[2] = dominant_left;
+        returned_values[3] = dominant_right;
         return returned_values;
 
     }
@@ -577,7 +630,6 @@ public class Node implements Serializable {
      */
 
     public void SplitFunction(Node node, double[] values) {
-
         // Generate nodes
         Node child1 = new Node();
         Node child2 = new Node();
@@ -587,6 +639,7 @@ public class Node implements Serializable {
         node.rightNode = child2;
         node.nmin_last_check = 0;
         node.nmin = 0;
+
         // Initialize informationGain,splitAttribute,splitValue for node(parent-node)
         node.splitAttr = (int) values[1];
         node.splitValue = values[2];
@@ -598,8 +651,8 @@ public class Node implements Serializable {
         child2.nmin_last_check = 0;
         child1.information_gain = 0.0;
         child2.information_gain = 0.0;
-        child1.label = -1;
-        child2.label = -1;
+        child1.label = (int) values[3];
+        child2.label = (int) values[4];
 
 
         // Initialize m_features,max_examples_seen,delta,tie_threshold for children nodes
@@ -618,6 +671,7 @@ public class Node implements Serializable {
 
         // Clear samples,labelCounts,label_List,setOfAttr on parent node
         node.labelCounts.clear();
+
     }
 
     /**
@@ -648,7 +702,7 @@ public class Node implements Serializable {
 
                     }
                     int label = Integer.parseInt(sample[sample.length - 1]);
-                    UpdateLabelCounters(node, label,weight);
+                    UpdateLabelCounters(node, label, weight);
                     UpdateNMin(node, weight);
                     return;
                 }
