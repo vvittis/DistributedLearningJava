@@ -286,65 +286,42 @@ public class DistributedLearning {
                                 // WARNING PHASE
                                 if (!empty_background_state.value()) {
                                     HoeffdingTree background_hoeffdingTree = background_hoeffdingTreeValueState.value();
-                                    background_hoeffdingTree.TestHoeffdingTree(background_hoeffdingTree.root, features, 0);
-                                    background_hoeffdingTree.UpdateHoeffdingTree(background_hoeffdingTree.root, features, instance_weight);
+                                    for (int i = 0; i < instance_weight; i++) {
+                                        background_hoeffdingTree.UpdateHoeffdingTree(background_hoeffdingTree.root, features, instance_weight);
+                                    }
                                     background_hoeffdingTreeValueState.update(background_hoeffdingTree);
-//                                    System.out.println("                        "+instance_id+" "+background_hoeffdingTree.getAccuracy());
-                                    collector.collect(new Tuple6<>(instance_id, prediction, -1, purpose_id, background_hoeffdingTree.getErrorRate(), 0));
                                 } else if (empty_background_state.value()) {
                                     // System.out.println("===================================Warning Phase===================================");
-                                    System.out.println("Background Tree " + instance_id + " Just Created ");
+//                                    System.out.println("Background Tree " + instance_id + " Just Created ");
                                     empty_background_state.update(false);
                                     // Warning Signal. Create & Train the Background Tree
                                     HoeffdingTree background_hoeffdingTree = new HoeffdingTree();
-                                    background_hoeffdingTree.NEW_CreateHoeffdingTree(2, 2, 200, 0.000001, 0.05, this.combination_function, hoeffding_tree_id, age_of_maturity_input);
+                                    background_hoeffdingTree.NEW_CreateHoeffdingTree(7, 9, 200, 0.0001, 0.05, this.combination_function, hoeffding_tree_id, 1);
                                     // background_hoeffdingTree.print_m_features();
                                     background_hoeffdingTreeValueState.update(background_hoeffdingTree);
-                                    collector.collect(new Tuple6<>(instance_id, prediction, -1, purpose_id, background_hoeffdingTree.getErrorRate(), 0));
-
                                 }
-                            } else if ((current_stream_status == 1 || current_stream_status == 2) && updated_stream_status == 2) {
+                            } else if (current_stream_status == 1 && updated_stream_status == 0) {
                                 // System.out.println("DS          Signal: instance id " + instance_id);
                                 if (current_signal == 2) {
                                     // System.out.println("=============================Stable Phase/ Drift===================================");
 //                                     System.out.println("Stable phase after a Drift Signal");
-//                                    System.out.println("Do the Switch:  " + instance_id + " Background Tree taking over "+ht.getAccuracy());
+                                    System.out.println("Do the Switch: " + instance_id + "Background Tree taking over");
                                     // Drift Signal. Do the Switch
                                     HoeffdingTree background_tree = background_hoeffdingTreeValueState.value();
-                                    background_tree.TestHoeffdingTree(background_tree.root, features, 0);
-                                    background_tree.UpdateHoeffdingTree(background_tree.root, features, instance_weight);
-                                    background_hoeffdingTreeValueState.update(background_tree);
-                                    collector.collect(new Tuple6<>(instance_id, prediction, -1, purpose_id, background_tree.getErrorRate(), 0));
-
-                                    if (current_stream_status == 1) {
-                                        System.out.println("Pending for the Switch:  " + hoeffding_tree_id + " => " + instance_id + " Background Tree taking over " + ht.getAccuracy() + " => " + background_tree.getAccuracy());
-                                    }
-//                                    System.out.println("Size "+ ht.SizeHT(ht.root));
-//                                    System.out.println("Counter "+ ht.counter);
-                                    if (background_tree.getAccuracy() > ht.getAccuracy()) {
-                                        System.out.println("Do the Switch:  " + hoeffding_tree_id + " => " + instance_id + " Background Tree taking over " + ht.getAccuracy() + " => " + background_tree.getAccuracy());
-                                        ht.RemoveHoeffdingTree();
-                                        hoeffdingTreeValueState.update(background_tree);
-                                        ht = hoeffdingTreeValueState.value();
-                                        System.out.println(ht.getAccuracy() + " " + ht.getErrorRate());
-                                        empty_background_state.update(true);
-                                        // System.out.println("Making the switch and resetting the Drift Detector");
-                                        //RESET EVERYTHING
-                                        conceptDriftDetector.ResetConceptDrift();
-                                    }
-                                    collector.collect(new Tuple6<>(instance_id, prediction, -1, purpose_id, background_tree.getErrorRate(), 0));
-
-                                }
-                            } else if (current_stream_status == 1 && updated_stream_status == 0) {
-                                if (current_signal == -1) {
+                                    ht.RemoveHoeffdingTree();
+                                    hoeffdingTreeValueState.update(background_tree);
+                                    empty_background_state.update(true);
+                                    // System.out.println("Making the switch and resetting the Drift Detector");
+                                    //RESET EVERYTHING
+                                    conceptDriftDetector.ResetConceptDrift();
+                                } else if (current_signal == -1) {
                                     // System.out.println("=========================Stable Phase/ False Alarm=================================");
-                                    System.out.println("Stable phase after a false alarm");
+//                                     System.out.println("Stable phase after a false alarm");
                                     // System.out.println("FAS         False Alarm Signal: instance id " + instance_id);
                                     HoeffdingTree background_tree = background_hoeffdingTreeValueState.value();
                                     background_tree.RemoveHoeffdingTree();
                                     background_hoeffdingTreeValueState.clear();
                                     empty_background_state.update(true);
-
                                 }
                                 //System.out.println("Training HT with id " + hoeffding_tree_id + " which has error-rate " + ht.getErrorRate() + " predicts " + prediction + " for the instance with id " + instance_id + " while the true label is " + true_label);
                             }
@@ -372,8 +349,8 @@ public class DistributedLearning {
                     } else if (instance_id == -1 && true_label == -1 && purpose_id == -1) {
                         HoeffdingTree ht = hoeffdingTreeValueState.value();
                         int size = ht.SizeHT(ht.root);
-
-                        System.out.print(size + "\t" + ht.getAccuracy() + "\t");
+                        int number_of_splits = ht.getNumberOfSplits(ht.root);
+                        System.out.print(size + "\t" + ht.getAccuracy() + "\t"+number_of_splits);
 //                        System.out.println("Accuracy       : " + ht.getAccuracy());
 
                         System.out.println("End of Stream message " + hoeffding_tree_id);

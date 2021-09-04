@@ -131,10 +131,15 @@ public class HoeffdingTree implements Serializable {
 //            System.out.println(statistics_entropy_history[2] + " => " + Math.sqrt(statistics_entropy_history[1] / (statistics_entropy_history[2] - 2)));
 //            System.out.println(statistics_ig_history[2] + " => " + Math.sqrt(statistics_ig_history[1] / (statistics_ig_history[2] - 2)));
             }
+        }else {
+            Node updatedNode = node.TraverseTree(node, input);
+            node.InsertNewSample(updatedNode, input, weight);
         }
 
     }
-
+    public int getNumberOfSplits(Node node){
+        return node.getSplitting_counter();
+    }
 
     public int SizeHT(Node node) {
         return node.countNode(node);
