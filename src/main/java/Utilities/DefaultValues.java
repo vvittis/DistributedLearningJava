@@ -26,8 +26,8 @@ public class DefaultValues {
     int number_of_hoeffding_trees = 1;
     int combination_function = 3;
     double weighted_voting_parameter = 1;
-    int age_of_maturity = 10000;
-    int drift_detection_method_id = 2;
+    int age_of_maturity = 1000;
+    int drift_detection_method_id = 0;
 
 
 

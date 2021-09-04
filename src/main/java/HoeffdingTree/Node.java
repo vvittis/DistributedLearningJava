@@ -33,7 +33,6 @@ public class Node implements Serializable {
     public Integer nmin;            // Keep tracking the number of samples seen
     public Integer nmin_last_check; // Number of instances from last check
     public ArrayList<HashMap<Integer, ArrayList<Double>>> statistics = new ArrayList<>(); // number of values for each column
-    public Integer splitting_counter;
     /*
      *  ||          feature 1        || ... ||      feature N            ||     <- ArrayList <
      *  || ------------------------------------------------------------- ||
@@ -67,9 +66,6 @@ public class Node implements Serializable {
         return this.nmin;
     }
 
-    public Integer getSplitting_counter(){
-        return this.splitting_counter;
-    }
     public int countNode(Node root) {
 
         //base case
@@ -102,7 +98,6 @@ public class Node implements Serializable {
         this.rightNode = null;
         this.splitAttr = null;
         this.splitValue = null;
-        this.splitting_counter=0;
         this.delta = delta;
         this.max_examples_seen = max_examples_seen;
         this.m_features = m_features;
@@ -313,7 +308,6 @@ public class Node implements Serializable {
             // true; - for testing
             boolean svfdt_ii_constraints =  (entropy > 0) || (ig > 0);
             if (svfdt_ii_constraints) {
-                this.splitting_counter ++;
                 double[] values = {G[0][0], G[1][0], G[2][0],G[3][0],G[4][0]};
 
                 SplitFunction(node, values);

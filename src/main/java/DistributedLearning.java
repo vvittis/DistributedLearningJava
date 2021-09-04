@@ -92,7 +92,7 @@ public class DistributedLearning {
 
         //KAFKA INPUT SOURCE
         DataStream<String> stream = env
-                .addSource(new FlinkKafkaConsumer<>("sine_original_100k", new SimpleStringSchema(), properties).setStartFromEarliest())
+                .addSource(new FlinkKafkaConsumer<>("sine_dataset_3M_full_abrupt", new SimpleStringSchema(), properties).setStartFromEarliest())
                 .name("Kafka Input Source").setParallelism(parallelism).setMaxParallelism(parallelism);
 
 
@@ -151,7 +151,7 @@ public class DistributedLearning {
 
 
         // PERFORMANCE (ERROR-RATE) MONITORING SINK
-        partial_result.addSink(new FlinkKafkaProducer<>("localhost:9092", "all_together2",
+        partial_result.addSink(new FlinkKafkaProducer<>("localhost:9092", "sine_dataset_3M_full_abrupt_without",
                 (SerializationSchema<Tuple6<Integer, Integer, Integer, Integer, Double, Integer>>)
                         element -> (element.getField(5).toString() + "," + element.getField(4).toString() + "," + element.getField(0).toString()).getBytes()))
                 .name("Visualizing Performance Metrics").setParallelism(parallelism);
@@ -349,8 +349,8 @@ public class DistributedLearning {
                     } else if (instance_id == -1 && true_label == -1 && purpose_id == -1) {
                         HoeffdingTree ht = hoeffdingTreeValueState.value();
                         int size = ht.SizeHT(ht.root);
-                        int number_of_splits = ht.getNumberOfSplits(ht.root);
-                        System.out.print(size + "\t" + ht.getAccuracy() + "\t"+number_of_splits);
+
+                        System.out.print(size + "\t" + ht.getAccuracy() + "\t");
 //                        System.out.println("Accuracy       : " + ht.getAccuracy());
 
                         System.out.println("End of Stream message " + hoeffding_tree_id);
