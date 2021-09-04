@@ -27,7 +27,7 @@ public class DefaultValues {
     int combination_function = 3;
     double weighted_voting_parameter = 1;
     int age_of_maturity = 1000;
-    int drift_detection_method_id = 0;
+    int drift_detection_method_id = 1;
 
 
 

@@ -73,15 +73,15 @@ public class HoeffdingTree implements Serializable {
                 statistics_ht_history[3] = 0;
                 statistics_ht_history[4] = 0;
             }
-            if (this.getAccuracy() < statistics_ht_history[0] + 2*statistics_ht_history[3]) {
-                if (this.getAccuracy() > statistics_ht_history[0] - 2*statistics_ht_history[3]) {
+            if (this.getAccuracy() < statistics_ht_history[0] + statistics_ht_history[3]) {
+                if (this.getAccuracy() > statistics_ht_history[0] - statistics_ht_history[3]) {
                     this.counter1 = this.counter1 + 1;
 //                    System.out.println("Counter 1" + this.counter1 + " Counter 2" + this.counter);
                 }
             }
-            if ((this.counter1 / this.counter) > 0.8) {
-                return false;
-            }
+//            if ((this.counter1 / this.counter) > 0.8) {
+//                return false;
+//            }
         }
         return true;
 
