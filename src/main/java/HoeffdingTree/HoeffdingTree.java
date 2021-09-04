@@ -73,15 +73,15 @@ public class HoeffdingTree implements Serializable {
                 statistics_ht_history[3] = 0;
                 statistics_ht_history[4] = 0;
             }
-            if (this.getAccuracy() < statistics_ht_history[0] + 2*statistics_ht_history[3]) {
-                if (this.getAccuracy() > statistics_ht_history[0] - 2*statistics_ht_history[3]) {
+            if (this.getAccuracy() < statistics_ht_history[0] + 2 * statistics_ht_history[3]) {
+                if (this.getAccuracy() > statistics_ht_history[0] - 2 * statistics_ht_history[3]) {
                     this.counter1 = this.counter1 + 1;
 //                    System.out.println("Counter 1" + this.counter1 + " Counter 2" + this.counter);
                 }
             }
-            if ((this.counter1 / this.counter) > 0.8) {
-                return false;
-            }
+//            if ((this.counter1 / this.counter) > 0.8) {
+//                return false;
+//            }
         }
         return true;
 
@@ -131,16 +131,21 @@ public class HoeffdingTree implements Serializable {
 //            System.out.println(statistics_entropy_history[2] + " => " + Math.sqrt(statistics_entropy_history[1] / (statistics_entropy_history[2] - 2)));
 //            System.out.println(statistics_ig_history[2] + " => " + Math.sqrt(statistics_ig_history[1] / (statistics_ig_history[2] - 2)));
             }
+        } else {
+            Node updatedNode = node.TraverseTree(node, input);
+            node.InsertNewSample(updatedNode, input, weight);
         }
 
     }
 
-
+    public int getNumberOfSplits(Node node){
+        return node.getSplitting_counter();
+    }
     public int SizeHT(Node node) {
         return node.countNode(node);
     }
 
-//    /**
+    //    /**
 //     * @param node     For a given node
 //     * @param input    An array of values of features which will be use for testing
 //     * @param keyTuple Use for distinction between predicted,testing and training tuples aka purposeID
@@ -153,17 +158,21 @@ public class HoeffdingTree implements Serializable {
     public static class Returninfo {
         Node node;
         int prediction;
-        Returninfo(Node node, int prediction){
+
+        Returninfo(Node node, int prediction) {
             this.node = node;
             this.prediction = prediction;
         }
-        public int getPrediction(){
+
+        public int getPrediction() {
             return this.prediction;
         }
-        public Node getNode(){
+
+        public Node getNode() {
             return this.node;
         }
     }
+
     public Returninfo TestHoeffdingTree(Node node, String[] input, int keyTuple) {
 
         int predicted_value = 0;
@@ -179,7 +188,7 @@ public class HoeffdingTree implements Serializable {
         Returninfo rn = node.TestHT(node, selectedInput);
         Node target_node = rn.node;
         predicted_value = rn.prediction;
-       if (predicted_value == Integer.parseInt(selectedInput[selectedInput.length - 1])) { // predicted value equal to the true label
+        if (predicted_value == Integer.parseInt(selectedInput[selectedInput.length - 1])) { // predicted value equal to the true label
             this.correctly_classified++;
         } else if (predicted_value == -1) {
             // that means that at some point there was a split which had created two new children nodes
@@ -260,6 +269,7 @@ public class HoeffdingTree implements Serializable {
     /**
      * <p> Print the selected features of tree </p>
      */
+
     public void print_m_features() {
         System.out.print("HT " + hoeffding_tree_id + " Selected Features: ");
         for (int m_feature : this.m_features) {
@@ -267,7 +277,6 @@ public class HoeffdingTree implements Serializable {
         }
         System.out.println();
     }
-
 
 
 }

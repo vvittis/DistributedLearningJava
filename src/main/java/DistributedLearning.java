@@ -66,7 +66,7 @@ public class DistributedLearning {
         int drift_detection_method_id = df.getDrift_detection_method_id();
         int parallelism = df.getParallelism();
 
-
+        // now
 
         /* Topics: health_dataset_topic SeaDriftTopic SineTopic */
         // Test 1 - data_source_SINE_sine1_w_50_n_0.1_103.csv
@@ -192,7 +192,6 @@ public class DistributedLearning {
     static class StatefulMap extends RichFlatMapFunction<Tuple3<String, Integer, Integer>, Tuple6<Integer, Integer, Integer, Integer, Double, Integer>> {
 
         private transient ValueState<HoeffdingTree> hoeffdingTreeValueState;
-        private transient ValueState<HoeffdingTree> backup_hoeffdingTreeValueState;
         private transient ValueState<HoeffdingTree> background_hoeffdingTreeValueState;
         private transient ValueState<ConceptDriftDetector> ConceptDriftDetectorValueState;
         private transient ValueState<Boolean> empty_state;
@@ -262,13 +261,7 @@ public class DistributedLearning {
                         //error_rate = ht.getErrorRate();
                         hoeffdingTreeValueState.update(ht);
 
-                        HoeffdingTree backup_ht = backup_hoeffdingTreeValueState.value();
-                        HoeffdingTree.Returninfo rn1 = backup_ht.TestHoeffdingTree(backup_ht.root, features, purpose_id);
-                        prediction1 = rn1.getPrediction();
-                        backup_ht.UpdateHoeffdingTree(rn1.getNode(), features, instance_weight);
-                        backup_hoeffdingTreeValueState.update(backup_ht);
 
-                        collector.collect(new Tuple6<>(instance_id, prediction1, -1, purpose_id, backup_ht.getErrorRate(), 2));
                         // Concept Drift Handler
                         if (drift_detection_method_id != 0) {
 
@@ -329,11 +322,10 @@ public class DistributedLearning {
                                         System.out.println(ht.getAccuracy() + " " + ht.getErrorRate());
                                         empty_background_state.update(true);
                                         // System.out.println("Making the switch and resetting the Drift Detector");
-                                        //RESET EVERYTHING
+                                        // RESET EVERYTHING
                                         conceptDriftDetector.ResetConceptDrift();
                                     }
                                     collector.collect(new Tuple6<>(instance_id, prediction, -1, purpose_id, background_tree.getErrorRate(), 0));
-
                                 }
                             } else if (current_stream_status == 1 && updated_stream_status == 0) {
                                 if (current_signal == -1) {
@@ -359,21 +351,18 @@ public class DistributedLearning {
                          * Otherwise, we would have had the same weight throughout the streaming passage.
                          * */
                         hoeffdingTreeValueState.update(ht);
-                        HoeffdingTree backup_ht = backup_hoeffdingTreeValueState.value();
-                        prediction1 = backup_ht.TestHoeffdingTree(backup_ht.root, features, purpose_id).getPrediction();
-                        backup_hoeffdingTreeValueState.update(backup_ht);
+
                         /* In case of instances which are fet to the system for prediction, we do not know its true label.
                          * Therefore, our need for a homogeneous output from the state, leads with no other choice of assigning
                          * an identifier in the true_label position (aka 3rd Integer in the collector)
                          * */
                         //System.out.println("Testing HT with id " + hoeffding_tree_id + " which has error-rate " + ht.getErrorRate() + " predicts " + prediction + " for the instance with id " + instance_id + " while the true label is " + true_label);
                         collector.collect(new Tuple6<>(instance_id, prediction, true_label, purpose_id, ht.getErrorRate(), 1));
-                        collector.collect(new Tuple6<>(instance_id, prediction, true_label, purpose_id, backup_ht.getErrorRate(), 2));
                     } else if (instance_id == -1 && true_label == -1 && purpose_id == -1) {
                         HoeffdingTree ht = hoeffdingTreeValueState.value();
                         int size = ht.SizeHT(ht.root);
-
-                        System.out.print(size + "\t" + ht.getAccuracy() + "\t");
+                        int number_of_splits = ht.getNumberOfSplits(ht.root);
+                        System.out.print(size + "\t" + ht.getAccuracy() + "\t"+ number_of_splits);
 //                        System.out.println("Accuracy       : " + ht.getAccuracy());
 
                         System.out.println("End of Stream message " + hoeffding_tree_id);
@@ -393,7 +382,6 @@ public class DistributedLearning {
                     age_of_maturity.update(age_of_maturity.value() + 1);
                     if (purpose_id == 5) {
                         HoeffdingTree ht = hoeffdingTreeValueState.value();
-                        HoeffdingTree backup_ht = backup_hoeffdingTreeValueState.value();
                         /* Online Bagging*/
 //                        if(true_label == 0) {
 //                            System.out.println("Training 0 " + features[0] + "," + features[1] + "," + true_label + "," + instance_weight + "," + instance_id);
@@ -402,10 +390,8 @@ public class DistributedLearning {
 //                            System.out.println("                                                    Training 1 " + features[0] + "," + features[1] + "," + true_label + "," + instance_weight + "," + instance_id);
 //                        }
                         ht.UpdateHoeffdingTree(ht.root, features, instance_weight);
-                        backup_ht.UpdateHoeffdingTree(backup_ht.root, features, instance_weight);
 
                         hoeffdingTreeValueState.update(ht);
-                        backup_hoeffdingTreeValueState.update(backup_ht);
                     }
                 }
             } else if (empty_state.value()) {
@@ -426,7 +412,6 @@ public class DistributedLearning {
                 HoeffdingTree back_up_hoeffdingTree = new HoeffdingTree();
                 back_up_hoeffdingTree.NEW_CreateHoeffdingTree(2, 2, 200, 0.000001, 0.05, this.combination_function, hoeffding_tree_id, age_of_maturity_input);
 
-                backup_hoeffdingTreeValueState.update(back_up_hoeffdingTree);
                 /* Also we create the a new ConceptDriftDetector.ConceptDriftDetector */
                 if (drift_detection_method_id != 0) {
 //                    System.out.println("Intro to Concept Drift");
@@ -442,10 +427,6 @@ public class DistributedLearning {
             /* Hoeffding Tree */
             ValueStateDescriptor<HoeffdingTree> descriptor_hoeffding_tree = new ValueStateDescriptor<HoeffdingTree>("hoeffdingTreeValueState", HoeffdingTree.class);
             hoeffdingTreeValueState = getRuntimeContext().getState(descriptor_hoeffding_tree);
-
-
-            ValueStateDescriptor<HoeffdingTree> descriptor_backup_hoeffdingTreeValueState = new ValueStateDescriptor<HoeffdingTree>("backup_hoeffdingTreeValueState", HoeffdingTree.class);
-            backup_hoeffdingTreeValueState = getRuntimeContext().getState(descriptor_backup_hoeffdingTreeValueState);
 
             /* Background Hoeffding Tree */
             ValueStateDescriptor<HoeffdingTree> descriptor_background_hoeffding_tree = new ValueStateDescriptor<HoeffdingTree>("background_hoeffdingTreeValueState", HoeffdingTree.class);
