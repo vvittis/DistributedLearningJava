@@ -2,7 +2,7 @@
 Homogeneous Ensemble learning, implementing Hoeffding Trees (Random Forest) under Concept Drift Conditions
 
 ### DistributedLearningJava.class
-
+ 
 
 #### Passing user's parameters
 Notes:
